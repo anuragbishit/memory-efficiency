@@ -25,6 +25,7 @@ from core.routing import (
     RoutingStrategy,
 )
 from core.representation import PromptIRGenerator, PromptIR, IRFormat
+from core.fidelity import ABFidelityTester, ABTestResult
 
 
 @dataclass
@@ -47,6 +48,7 @@ class ProcessedPromptPayload:
     ml_feature_vector: List[float]
     cost_latency_optimization: Dict[str, Any]
     total_pipeline_latency_ms: float
+    ab_fidelity: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -82,12 +84,19 @@ class LocalPreProcessingPipeline:
             default_strategy=default_strategy
         )
         self.ir_generator = PromptIRGenerator(tokenizer=self.tokenizer)
+        self.fidelity_tester = ABFidelityTester(
+            tokenizer=self.tokenizer,
+            compressor=self.compressor
+        )
 
     def process(
         self,
         prompt: str,
         encoding_name: Optional[str] = None,
         compression_level: Optional[CompressionLevel] = None,
+        run_ab_fidelity: bool = False,
+        model_id: Optional[str] = None,
+        api_key: Optional[str] = None,
     ) -> ProcessedPromptPayload:
         """
         Executes the end-to-end consumer pre-processing workflow:
@@ -143,6 +152,17 @@ class LocalPreProcessingPipeline:
             intent_category=routing_decision.ensemble_classification.get("consensus_intent"),
         )
 
+        # Stage 9: Optional A/B Output Answer Fidelity Evaluation (Topic 10)
+        fidelity_data = None
+        if run_ab_fidelity:
+            fidelity_res = self.fidelity_tester.run_ab_test(
+                raw_prompt=prompt,
+                compressed_prompt=compression_result.compressed_text,
+                model_id=model_id or "cloud/gpt-4o-mini",
+                api_key=api_key,
+            )
+            fidelity_data = fidelity_res.to_dict()
+
         total_latency = round(
             routing_decision.triage_latency_ms + compression_result.latency_ms, 3
         )
@@ -165,4 +185,22 @@ class LocalPreProcessingPipeline:
             ml_feature_vector=ml_vector,
             cost_latency_optimization=opt_report.to_dict(),
             total_pipeline_latency_ms=total_latency,
+            ab_fidelity=fidelity_data,
+        )
+
+    def run_fidelity_ab_test(
+        self,
+        prompt: str,
+        compressed_prompt: Optional[str] = None,
+        model_id: str = "cloud/gpt-4o-mini",
+        api_key: Optional[str] = None,
+        force_simulation: bool = False,
+    ) -> ABTestResult:
+        """Runs the end-to-end A/B Quality & Fidelity test on uncompressed vs compressed prompts."""
+        return self.fidelity_tester.run_ab_test(
+            raw_prompt=prompt,
+            compressed_prompt=compressed_prompt,
+            model_id=model_id,
+            api_key=api_key,
+            force_simulation=force_simulation,
         )

@@ -1,0 +1,91 @@
+{
+  "summary": {
+    "total_prompts": 6,
+    "average_fidelity_pct": 100.0,
+    "average_semantic_similarity_pct": 100.0,
+    "average_entity_retention_pct": 100.0,
+    "average_token_savings_pct": 22.2,
+    "net_intelligence_loss_pct": 0.0,
+    "overall_status": "PASSED"
+  },
+  "evaluations": [
+    {
+      "id": "PROMPT_01_CONVERSATIONAL",
+      "category": "Conversational & Polite Fluff",
+      "raw_tokens": 47,
+      "comp_tokens": 14,
+      "token_savings_pct": 70.21,
+      "fidelity_pct": 100.0,
+      "similarity_pct": 100.0,
+      "entity_retention_pct": 100.0,
+      "code_status": "PASSED",
+      "intelligence_loss_pct": 0.0,
+      "verdict": "[PASSED] 100% Output Answer Fidelity. Compression stripped only conversational fluff; zero intelligence, facts, or reasoning lost."
+    },
+    {
+      "id": "PROMPT_02_CODE_AND_CONSTRAINTS",
+      "category": "Code Optimization & Strict Constraints",
+      "raw_tokens": 122,
+      "comp_tokens": 88,
+      "token_savings_pct": 27.87,
+      "fidelity_pct": 100.0,
+      "similarity_pct": 100.0,
+      "entity_retention_pct": 100.0,
+      "code_status": "PASSED",
+      "intelligence_loss_pct": 0.0,
+      "verdict": "[PASSED] 100% Output Answer Fidelity. Compression stripped only conversational fluff; zero intelligence, facts, or reasoning lost."
+    },
+    {
+      "id": "PROMPT_03_MULTIHOP_REASONING",
+      "category": "Deep Analytical & Architectural Reasoning",
+      "raw_tokens": 53,
+      "comp_tokens": 53,
+      "token_savings_pct": 0.0,
+      "fidelity_pct": 100.0,
+      "similarity_pct": 100.0,
+      "entity_retention_pct": 100.0,
+      "code_status": "N/A",
+      "intelligence_loss_pct": 0.0,
+      "verdict": "[PASSED] 100% Output Answer Fidelity. Compression stripped only conversational fluff; zero intelligence, facts, or reasoning lost."
+    },
+    {
+      "id": "PROMPT_04_MULTILINGUAL_HINDI",
+      "category": "Multilingual BPE Token Fragmentation (Hindi)",
+      "raw_tokens": 155,
+      "comp_tokens": 129,
+      "token_savings_pct": 16.77,
+      "fidelity_pct": 100.0,
+      "similarity_pct": 100.0,
+      "entity_retention_pct": 100.0,
+      "code_status": "N/A",
+      "intelligence_loss_pct": 0.0,
+      "verdict": "[PASSED] 100% Output Answer Fidelity. Compression stripped only conversational fluff; zero intelligence, facts, or reasoning lost."
+    },
+    {
+      "id": "PROMPT_05_SIMPLE_FACTUAL",
+      "category": "Low Complexity / Factual Lookup",
+      "raw_tokens": 7,
+      "comp_tokens": 7,
+      "token_savings_pct": 0.0,
+      "fidelity_pct": 100.0,
+      "similarity_pct": 100.0,
+      "entity_retention_pct": 100.0,
+      "code_status": "N/A",
+      "intelligence_loss_pct": 0.0,
+      "verdict": "[PASSED] 100% Output Answer Fidelity. Compression stripped only conversational fluff; zero intelligence, facts, or reasoning lost."
+    },
+    {
+      "id": "PROMPT_06_SYSTEM_DESIGN",
+      "category": "Distributed Systems & Concurrency",
+      "raw_tokens": 35,
+      "comp_tokens": 35,
+      "token_savings_pct": 0.0,
+      "fidelity_pct": 100.0,
+      "similarity_pct": 100.0,
+      "entity_retention_pct": 100.0,
+      "code_status": "PASSED",
+      "intelligence_loss_pct": 0.0,
+      "verdict": "[PASSED] 100% Output Answer Fidelity. Compression stripped only conversational fluff; zero intelligence, facts, or reasoning lost."
+    }
+  ]
+}

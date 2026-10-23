@@ -9,7 +9,7 @@
     "cost_reduction_pct": 95.17,
     "net_dollar_savings_usd": 0.09723,
     "projected_10k_savings_usd": 972.3,
-    "avg_latency_ms": 21.722
+    "avg_latency_ms": 21.999
   },
   "details": [
     {
@@ -23,7 +23,7 @@
       "model": "Llama 3.2 1B Instruct (G",
       "cost_usd": "$0.00000",
       "savings_pct": "100.0%",
-      "latency_ms": 120.764
+      "latency_ms": 122.894
     },
     {
       "id": "PROMPT_02_CODE_AND_CONSTRAINTS",
@@ -36,7 +36,7 @@
       "model": "OpenAI GPT-4o Mini",
       "cost_usd": "$0.00247",
       "savings_pct": "94.01%",
-      "latency_ms": 3.758
+      "latency_ms": 3.348
     },
     {
       "id": "PROMPT_03_MULTIHOP_REASONING",
@@ -49,7 +49,7 @@
       "model": "OpenAI GPT-4o Mini",
       "cost_usd": "$0.00247",
       "savings_pct": "94.0%",
-      "latency_ms": 2.051
+      "latency_ms": 1.678
     },
     {
       "id": "PROMPT_04_MULTILINGUAL_HINDI",
@@ -62,7 +62,7 @@
       "model": "Llama 3.2 1B Instruct (G",
       "cost_usd": "$0.00000",
       "savings_pct": "100.0%",
-      "latency_ms": 1.661
+      "latency_ms": 1.531
     },
     {
       "id": "PROMPT_05_SIMPLE_FACTUAL",
@@ -75,7 +75,7 @@
       "model": "Llama 3.2 1B Instruct (G",
       "cost_usd": "$0.00000",
       "savings_pct": "100.0%",
-      "latency_ms": 0.797
+      "latency_ms": 0.795
     },
     {
       "id": "PROMPT_06_SYSTEM_DESIGN",
@@ -88,7 +88,7 @@
       "model": "Llama 3.2 3B Instruct (G",
       "cost_usd": "$0.00000",
       "savings_pct": "100.0%",
-      "latency_ms": 1.3
+      "latency_ms": 1.751
     }
   ]
 }
