@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "total_prompts": 6,
+    "total_raw_tokens": 419,
+    "total_compressed_tokens": 326,
+    "net_token_reduction_pct": 22.2,
+    "actual_cost_usd": 0.004937,
+    "baseline_cost_usd": 0.10216599999999999,
+    "cost_reduction_pct": 95.17,
+    "net_dollar_savings_usd": 0.09723,
+    "projected_10k_savings_usd": 972.3,
+    "avg_latency_ms": 21.722
+  },
+  "details": [
+    {
+      "id": "PROMPT_01_CONVERSATIONAL",
+      "category": "Conversational & Polite Fluff",
+      "raw_tokens": 47,
+      "compressed_tokens": 14,
+      "reduction_pct": 70.21,
+      "complexity_score": 0.233,
+      "tier": "LOW",
+      "model": "Llama 3.2 1B Instruct (G",
+      "cost_usd": "$0.00000",
+      "savings_pct": "100.0%",
+      "latency_ms": 120.764
+    },
+    {
+      "id": "PROMPT_02_CODE_AND_CONSTRAINTS",
+      "category": "Code Optimization & Strict Constraints",
+      "raw_tokens": 122,
+      "compressed_tokens": 88,
+      "reduction_pct": 27.87,
+      "complexity_score": 0.7,
+      "tier": "HIGH",
+      "model": "OpenAI GPT-4o Mini",
+      "cost_usd": "$0.00247",
+      "savings_pct": "94.01%",
+      "latency_ms": 3.758
+    },
+    {
+      "id": "PROMPT_03_MULTIHOP_REASONING",
+      "category": "Deep Analytical & Architectural Reasoning",
+      "raw_tokens": 53,
+      "compressed_tokens": 53,
+      "reduction_pct": 0.0,
+      "complexity_score": 0.7,
+      "tier": "HIGH",
+      "model": "OpenAI GPT-4o Mini",
+      "cost_usd": "$0.00247",
+      "savings_pct": "94.0%",
+      "latency_ms": 2.051
+    },
+    {
+      "id": "PROMPT_04_MULTILINGUAL_HINDI",
+      "category": "Multilingual BPE Token Fragmentation (Hindi)",
+      "raw_tokens": 155,
+      "compressed_tokens": 129,
+      "reduction_pct": 16.77,
+      "complexity_score": 0.168,
+      "tier": "LOW",
+      "model": "Llama 3.2 1B Instruct (G",
+      "cost_usd": "$0.00000",
+      "savings_pct": "100.0%",
+      "latency_ms": 1.661
+    },
+    {
+      "id": "PROMPT_05_SIMPLE_FACTUAL",
+      "category": "Low Complexity / Factual Lookup",
+      "raw_tokens": 7,
+      "compressed_tokens": 7,
+      "reduction_pct": 0.0,
+      "complexity_score": 0.025,
+      "tier": "LOW",
+      "model": "Llama 3.2 1B Instruct (G",
+      "cost_usd": "$0.00000",
+      "savings_pct": "100.0%",
+      "latency_ms": 0.797
+    },
+    {
+      "id": "PROMPT_06_SYSTEM_DESIGN",
+      "category": "Distributed Systems & Concurrency",
+      "raw_tokens": 35,
+      "compressed_tokens": 35,
+      "reduction_pct": 0.0,
+      "complexity_score": 0.63,
+      "tier": "MEDIUM",
+      "model": "Llama 3.2 3B Instruct (G",
+      "cost_usd": "$0.00000",
+      "savings_pct": "100.0%",
+      "latency_ms": 1.3
+    }
+  ]
+}
