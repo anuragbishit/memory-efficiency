@@ -5,7 +5,7 @@
 [![Streamlit](https://img.shields.io/badge/dashboard-Streamlit-FF4B4B.svg)](app.py)
 [![License](https://img.shields.io/badge/license-Academic%20Research-purple.svg)](README.md)
 
-**A B.Tech Minor Project in Computer Science and Engineering (Artificial Intelligence & Machine Learning)**  
+**A  B.Tech Minor Project in Computer Science and Engineering **  
 **Department of Computer Science & Engineering, Shivalik College of Engineering, Dehradun**  
 *Academic Session: 2026*
 
