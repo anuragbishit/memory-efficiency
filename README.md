@@ -13,7 +13,7 @@
 * **Submitted By:**
   1. Arpit Bisht (230410101034)
   2. Anurag Kumar Singh (230410101032)
-  3. Amandeep Kumar (230410101016)
+  3. Amandeep Kumar (230410101018)
   4. Anurag Yadav (230410101033)
 
 ---
