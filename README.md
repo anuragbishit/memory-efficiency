@@ -292,9 +292,9 @@ Ai-efficiency-/
 This project was developed as part of the B.Tech Minor Project requirements at **Shivalik College of Engineering, Dehradun**:
 
 ```bibtex
-@misc{bisht2026optimizing,
+@misc{arpitbisht2026optimizing,
   title={Optimizing AI Architecture for Long-Term Memory and Efficiency: Consumer-Side Pre-Processing, AST Compression, and Dynamic Model Routing},
-  author={Bisht, Arpit and Singh, Anurag Kumar and Kumar, Amandeep and Yadav, Anurag},
+  author={Arpit Bisht, Anurag Kumar Singh, Amandeep kumar and Anurag Yadav},
   year={2026},
   institution={Shivalik College of Engineering, Dehradun},
   note={Under the supervision of Ms. Swati Kashyap}
