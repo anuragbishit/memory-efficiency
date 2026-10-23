@@ -13,8 +13,8 @@
 * **Submitted By:**
   1. Arpit Bisht (230410101034)
   2. Anurag Kumar Singh (230410101032)
-  3. Anurag Yadav (230410101033)
-  4. Amandeep Kumar (230410101016)
+  3. Amandeep Kumar (230410101016)
+  4. Anurag Yadav (230410101033)
 
 ---
 
@@ -294,7 +294,7 @@ This project was developed as part of the B.Tech Minor Project requirements at *
 ```bibtex
 @misc{bisht2026optimizing,
   title={Optimizing AI Architecture for Long-Term Memory and Efficiency: Consumer-Side Pre-Processing, AST Compression, and Dynamic Model Routing},
-  author={Bisht, Arpit and Singh, Anurag Kumar and Yadav, Anurag and Kumar, Amandeep},
+  author={Bisht, Arpit and Singh, Anurag Kumar and Kumar, Amandeep and Yadav, Anurag},
   year={2026},
   institution={Shivalik College of Engineering, Dehradun},
   note={Under the supervision of Ms. Swati Kashyap}
