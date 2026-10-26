@@ -1,20 +1,23 @@
 # Optimizing AI Architecture for Long-Term Memory and Efficiency
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-69%20passed-brightgreen.svg)](tests/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Tests](https://img.shields.io/badge/tests-69%2F20%20passed-brightgreen.svg)](tests/)
 [![Streamlit](https://img.shields.io/badge/dashboard-Streamlit-FF4B4B.svg)](app.py)
 [![License](https://img.shields.io/badge/license-Academic%20Research-purple.svg)](README.md)
 
-**A  B.Tech Minor Project in Computer Science and Engineering **  
-**Department of Computer Science & Engineering, Shivalik College of Engineering, Dehradun**  
-*Academic Session: 2026*
+**A B.Tech Minor Project in Computer Science and Engineering**
 
-* **Supervised By:** Ms. Swati Kashyap (Assistant Professor, Department of CSE)
-* **Submitted By:**
-  1. Arpit Bisht (230410101034)
-  2. Anurag Kumar Singh (230410101032)
-  3. Amandeep Kumar (230410101018)
-  4. Anurag Yadav (230410101033)
+**Department:** Computer Science & Engineering, Shivalik College of Engineering, Dehradun
+
+**Academic Session:** 2026
+
+**Supervised By:** Ms. Swati Kashyap (Assistant Professor, Department of CSE)
+
+**Submitted By:**
+1. Arpit Bisht (230410101034)
+2. Anurag Kumar Singh (230410101032)
+3. Amandeep Kumar (230410101018)
+4. Anurag Yadav (230410101033)
 
 ---
 
@@ -340,5 +343,6 @@ This project was developed as part of the B.Tech Minor Project requirements at *
   note={Under the supervision of Ms. Swati Kashyap}
 }
 ```
-#   Q u a n t i z a t i o n  
+#   Q u a n t i z a t i o n 
+ 
  
