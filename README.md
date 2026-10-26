@@ -340,3 +340,5 @@ This project was developed as part of the B.Tech Minor Project requirements at *
   note={Under the supervision of Ms. Swati Kashyap}
 }
 ```
+#   Q u a n t i z a t i o n  
+ 
