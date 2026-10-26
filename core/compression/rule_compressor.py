@@ -26,11 +26,16 @@ WORDY_PHRASE_MAPPINGS: List[Tuple[re.Pattern, str]] = [
     (re.compile(r"\bhow\s+(?:can\s+i|do\s+i)\s+write\s+(?:a\s+)?code\s+to\b", re.IGNORECASE), "how to code to "),
     (re.compile(r"\bhow\s+(?:can\s+i|do\s+i|should\s+i)\s+\b", re.IGNORECASE), "how to "),
 
-    # 2. Action Verb + Indefinite Determiner Compaction (Safely eliminates non-semantic articles)
-    (re.compile(r"\b(write|create|implement|build|print|display|develop|generate|design|solve|reverse|sort|traverse|compute|calculate)\s+an?\s+", re.IGNORECASE), r"\1 "),
+    # 2. Action Verb + Determiner Compaction & Duplicate Word Removal
+    (re.compile(r"\b([a-zA-Z]+)\s+\1\b", re.IGNORECASE), r"\1"),
+    (re.compile(r"\b(write|create|implement|build|print|display|develop|generate|design|solve|reverse|sort|traverse|compute|calculate|describe|explain|give|provide|draw|outline|list|find|state)\s+(?:the\s+|an?\s+)+", re.IGNORECASE), r"\1 "),
+    (re.compile(r"\b(explain|list|show|give|describe|define)\s+(?:its|their)\s+", re.IGNORECASE), r"\1 "),
+    (re.compile(r"\b(write|list|note)\s+down\b", re.IGNORECASE), r"\1"),
 
     # 3. Pleonasms & Verbose Connectors
     (re.compile(r"\band\s+also\b", re.IGNORECASE), "and"),
+    (re.compile(r"\band\s+(?:its|their)\s+", re.IGNORECASE), "and "),
+    (re.compile(r"\b(?:of\s+it|of\s+them|of\s+this|of\s+that)\b", re.IGNORECASE), ""),
     (re.compile(r"\bas\s+well\s+as\b", re.IGNORECASE), "and"),
     (re.compile(r"\balong\s+with\b", re.IGNORECASE), "and"),
     (re.compile(r"\bin\s+addition\s+to\b", re.IGNORECASE), "and"),
