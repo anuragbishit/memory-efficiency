@@ -11,6 +11,7 @@ import sys
 import os
 import argparse
 import json
+from typing import Optional, List, Dict, Any
 
 # Ensure project root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
@@ -32,6 +33,7 @@ from core.compression.density import InformationDensityAnalyzer
 from core.representation import PromptIRGenerator, IRFormat
 from core.routing import RoutingStrategy, DEFAULT_MODEL_REGISTRY
 from core.fidelity import ABFidelityTester, ABTestResult
+from core.editor import CodeEditResult, EditTier
 from benchmarks.benchmark_tokenization_compression import BENCHMARK_PROMPTS, run_benchmark
 
 
@@ -267,6 +269,67 @@ def display_ab_test_report(pipeline: LocalPreProcessingPipeline, prompt_text: st
     print("=" * 90 + "\n")
 
 
+def display_code_edit_demo(
+    pipeline: LocalPreProcessingPipeline,
+    instruction: str = "Change port = 8000 to 8080",
+    code: Optional[str] = None
+):
+    """Demonstrates 0-token direct deterministic code editing."""
+    target_code = code or """# Production Web Service Config
+a = 10  # Initial coefficient
+host = "127.0.0.1"
+port = 8000  # Default HTTP port
+max_retries = 3
+debug_mode = False
+
+def calculate_metrics(count: int) -> int:
+    multiplier = 2
+    total = count * multiplier
+    return total
+
+def fetch_data(timeout: int = 10):
+    url = "http://localhost:5000/api"
+    retries = max_retries
+    return url
+"""
+    print("\n" + "=" * 90)
+    print(" TOPIC 11: TOKEN-EFFICIENT DIRECT CODE EDITING (0-TOKEN ARCHITECTURE)")
+    print("=" * 90)
+    print("Instruction:")
+    print(f"  >> {instruction}")
+    print("\nOriginal Code Target:")
+    for idx, line in enumerate(target_code.strip().splitlines()[:6], 1):
+        print(f"  {idx:2d} | {line}")
+    print("  ... (remaining lines omitted)")
+
+    res: CodeEditResult = pipeline.edit_code(
+        code=target_code,
+        instruction=instruction,
+        language="python"
+    )
+
+    print("\n" + "=" * 90)
+    print(" EXECUTION RESULTS & TOKEN METRICS")
+    print("=" * 90)
+    print(f"  * Execution Tier:              {res.tier.value} ({'0 LLM Calls' if res.llm_calls_made == 0 else '1 Call'})")
+    print(f"  * Operation:                   {res.operation}")
+    print(f"  * LLM Tokens Consumed:         {res.tokens_consumed} tokens (Deterministic AST execution)")
+    print(f"  * Naive Line-by-Line Baseline: {res.baseline_tokens} tokens")
+    print(f"  * Tokens Saved:                {res.tokens_saved} tokens ({res.token_savings_pct}% reduction)")
+    print(f"  * Execution Latency:           {res.latency_ms:.2f} ms (sub-millisecond)")
+    print(f"  * AST Syntax Integrity:        {'PASSED (Valid)' if res.syntax_valid else 'FAILED'}")
+    print(f"  * Validation Details:          {res.validation_message}")
+
+    print("\n" + "-" * 90)
+    print(" UNIFIED DIFF:")
+    print("-" * 90)
+    if res.diff:
+        print(res.diff)
+    else:
+        print("  (No textual modifications)")
+    print("=" * 90 + "\n")
+
+
 def interactive_menu():
     print_banner()
     pipeline = LocalPreProcessingPipeline(
@@ -281,9 +344,10 @@ def interactive_menu():
         print(" [3] Run full empirical benchmark suite across all test cases")
         print(" [4] Run 8-Language Cross-Lingual Parity & Cost Disparity Benchmark")
         print(" [5] Run A/B Output Answer Fidelity Test (Original vs Compressed LLM Generation)")
-        print(" [6] Exit")
+        print(" [6] Run Token-Efficient 0-Token Direct Code Editor (Topic 11)")
+        print(" [7] Exit")
 
-        choice = input("\nEnter choice [1-6]: ").strip()
+        choice = input("\nEnter choice [1-7]: ").strip()
 
         if choice == "1":
             user_text = input("\nEnter prompt: ").strip()
@@ -351,10 +415,31 @@ def interactive_menu():
                 except ValueError:
                     print("Invalid selection.")
         elif choice == "6":
+            print("\nToken-Efficient Code Editing Options:")
+            print(" [1] Run default demo ('Change port = 8000 to 8080')")
+            print(" [2] Enter custom instruction & code")
+            sub_c = input("Enter choice [1-2]: ").strip()
+            if sub_c == "1":
+                display_code_edit_demo(pipeline)
+            elif sub_c == "2":
+                inst = input("Enter instruction (e.g. 'Change a = 10 to a = 12'): ").strip()
+                code_lines = []
+                print("Enter target Python code (press Enter twice to finish):")
+                while True:
+                    line = input()
+                    if not line and code_lines and not code_lines[-1]:
+                        break
+                    code_lines.append(line)
+                custom_code = "\n".join(code_lines).strip()
+                if inst and custom_code:
+                    display_code_edit_demo(pipeline, instruction=inst, code=custom_code)
+                else:
+                    print("Invalid input.")
+        elif choice == "7":
             print("Exiting. Thank you!")
             break
         else:
-            print("Invalid option. Please choose 1 to 6.")
+            print("Invalid option. Please choose 1 to 7.")
 
 
 def main():
@@ -363,11 +448,16 @@ def main():
     parser.add_argument("--benchmark", action="store_true", help="Run empirical benchmark suite")
     parser.add_argument("--encoding", type=str, default="cl100k_base", choices=["cl100k_base", "o200k_base"])
     parser.add_argument("--ab-test", action="store_true", help="Run A/B Output Answer Fidelity test (Output A vs Output B)")
+    parser.add_argument("--code-edit", action="store_true", help="Run 0-Token Direct Code Editor demo")
+    parser.add_argument("--edit-instruction", type=str, default="Change port = 8000 to 8080", help="Code edit instruction")
 
     args = parser.parse_args()
 
     if args.benchmark:
         run_benchmark()
+    elif args.code_edit:
+        pipeline = LocalPreProcessingPipeline(default_encoding=args.encoding)
+        display_code_edit_demo(pipeline, instruction=args.edit_instruction)
     elif args.prompt:
         pipeline = LocalPreProcessingPipeline(default_encoding=args.encoding)
         if args.ab_test:

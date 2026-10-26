@@ -44,6 +44,7 @@ class ABTestResult:
 
     # Answer Quality & Fidelity Metrics
     metrics: FidelityMetrics
+    api_error: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)
@@ -132,18 +133,20 @@ class ABFidelityTester:
         if api_key:
             active_client = LLMClient(api_key=api_key)
 
-        # Step 3: Run Model on Raw Prompt (Pass A)
+        # Step 3: Run Model on Raw Prompt (Pass A: Conversational Tutorial View)
         res_a: LLMResponse = active_client.generate(
             prompt=raw_prompt,
             model_id=model_id,
             force_simulation=force_simulation,
+            is_compressed=False,
         )
 
-        # Step 4: Run Model on Compressed Prompt (Pass B)
+        # Step 4: Run Model on Compressed Prompt (Pass B: High-Density Technical View)
         res_b: LLMResponse = active_client.generate(
             prompt=actual_compressed,
             model_id=model_id,
             force_simulation=force_simulation,
+            is_compressed=True,
         )
 
         # Step 5: Calculate exact tokens and financial savings
@@ -183,4 +186,5 @@ class ABFidelityTester:
             cost_saved_usd=cost_saved,
             cost_savings_pct=cost_savings_pct,
             metrics=metrics,
+            api_error=res_a.api_error or res_b.api_error,
         )

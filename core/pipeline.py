@@ -26,6 +26,7 @@ from core.routing import (
 )
 from core.representation import PromptIRGenerator, PromptIR, IRFormat
 from core.fidelity import ABFidelityTester, ABTestResult
+from core.editor import TokenEfficientCodeEditor, CodeEditResult, EditTier
 
 
 @dataclass
@@ -88,6 +89,7 @@ class LocalPreProcessingPipeline:
             tokenizer=self.tokenizer,
             compressor=self.compressor
         )
+        self.code_editor = TokenEfficientCodeEditor(tokenizer=self.tokenizer)
 
     def process(
         self,
@@ -203,4 +205,25 @@ class LocalPreProcessingPipeline:
             model_id=model_id,
             api_key=api_key,
             force_simulation=force_simulation,
+        )
+
+    def edit_code(
+        self,
+        code: str,
+        instruction: str,
+        language: str = "python",
+        file_path: Optional[str] = None,
+        force_tier: Optional[EditTier] = None,
+    ) -> CodeEditResult:
+        """
+        Executes token-efficient code editing (Topic 11).
+        Bypasses LLMs for direct deterministic value/variable changes (0 tokens),
+        and extracts micro-snippets for targeted edits to minimize token consumption.
+        """
+        return self.code_editor.edit_code(
+            code=code,
+            instruction=instruction,
+            language=language,
+            file_path=file_path,
+            force_tier=force_tier,
         )

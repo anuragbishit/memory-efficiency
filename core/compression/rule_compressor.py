@@ -12,7 +12,114 @@ from core.compression.rules import SEMANTIC_ANCHORS, LOW_INFO_FILLERS
 # Pleonasm and Wordy Construction Compactor:
 # Maps bloated, multi-word English idioms to their atomic semantic equivalent
 WORDY_PHRASE_MAPPINGS: List[Tuple[re.Pattern, str]] = [
-    # Verbose verb phrases
+    # 1. Code & Technical Query Request Frames (Prunes imperative prompt framing)
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?write\s+(?:a\s+)?code\s+in\s+([a-zA-Z0-9+#]+)\s+to\b", re.IGNORECASE), r"write \1 code to"),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?write\s+(?:a\s+)?(program|script|function|algorithm)\s+in\s+([a-zA-Z0-9+#]+)\s+to\b", re.IGNORECASE), r"write \2 \1 to"),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?write\s+code\s+in\s+([a-zA-Z0-9+#]+)\s+to\b", re.IGNORECASE), r"write \1 code to"),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?write\s+a\s+(code|program|script|function|algorithm)\s+to\b", re.IGNORECASE), r"write \1 to"),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?write\s+a\s+(code|program|script|function|algorithm)\s+for\b", re.IGNORECASE), r"write \1 for"),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?(?:give|provide)\s+(?:me\s+)?(?:a\s+)?(?:code|program|script)\s+in\s+([a-zA-Z0-9+#]+)\s+to\b", re.IGNORECASE), r"write \1 code to"),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?(?:give|provide)\s+(?:me\s+)?(?:a\s+)?(?:code|program|script)\s+(?:for|to)\b", re.IGNORECASE), "code for "),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?provide\s+(?:a\s+)?solution\s+(?:for|to)\b", re.IGNORECASE), "solve "),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?(?:create|generate|develop)\s+a\s+(code|program|script|function)\s+to\b", re.IGNORECASE), r"create \1 to"),
+    (re.compile(r"\bhow\s+(?:can\s+i|do\s+i)\s+write\s+(?:a\s+)?code\s+in\s+([a-zA-Z0-9+#]+)\s+to\b", re.IGNORECASE), r"how to code \1 to"),
+    (re.compile(r"\bhow\s+(?:can\s+i|do\s+i)\s+write\s+(?:a\s+)?code\s+to\b", re.IGNORECASE), "how to code to "),
+    (re.compile(r"\bhow\s+(?:can\s+i|do\s+i|should\s+i)\s+\b", re.IGNORECASE), "how to "),
+
+    # 2. Action Verb + Indefinite Determiner Compaction (Safely eliminates non-semantic articles)
+    (re.compile(r"\b(write|create|implement|build|print|display|develop|generate|design|solve|reverse|sort|traverse|compute|calculate)\s+an?\s+", re.IGNORECASE), r"\1 "),
+
+    # 3. Pleonasms & Verbose Connectors
+    (re.compile(r"\band\s+also\b", re.IGNORECASE), "and"),
+    (re.compile(r"\bas\s+well\s+as\b", re.IGNORECASE), "and"),
+    (re.compile(r"\balong\s+with\b", re.IGNORECASE), "and"),
+    (re.compile(r"\bin\s+addition\s+to\b", re.IGNORECASE), "and"),
+    (re.compile(r"\btogether\s+with\b", re.IGNORECASE), "with"),
+    (re.compile(r"\bsuch\s+as\s+for\s+example\b", re.IGNORECASE), "such as"),
+    (re.compile(r"\bfor\s+example\s+such\s+as\b", re.IGNORECASE), "for example"),
+    (re.compile(r"\bdue\s+to\s+the\s+reason\s+that\b", re.IGNORECASE), "because"),
+    (re.compile(r"\bfor\s+the\s+reason\s+that\b", re.IGNORECASE), "because"),
+    (re.compile(r"\bin\s+order\s+that\b", re.IGNORECASE), "so that"),
+    (re.compile(r"\bin\s+order\s+to\b", re.IGNORECASE), "to"),
+    (re.compile(r"\bso\s+as\s+to\b", re.IGNORECASE), "to"),
+    (re.compile(r"\bwith\s+the\s+aim\s+of\b", re.IGNORECASE), "to"),
+    (re.compile(r"\bwith\s+the\s+intention\s+of\b", re.IGNORECASE), "to"),
+    (re.compile(r"\bthe\s+question\s+as\s+to\s+whether\b", re.IGNORECASE), "whether"),
+    (re.compile(r"\bas\s+to\s+whether\b", re.IGNORECASE), "whether"),
+    (re.compile(r"\bregardless\s+of\s+the\s+fact\s+that\b", re.IGNORECASE), "although"),
+    (re.compile(r"\bin\s+the\s+case\s+that\b", re.IGNORECASE), "if"),
+    (re.compile(r"\bunder\s+the\s+condition\s+that\b", re.IGNORECASE), "if"),
+    (re.compile(r"\bon\s+the\s+assumption\s+that\b", re.IGNORECASE), "assuming"),
+    (re.compile(r"\bin\s+light\s+of\s+the\s+fact\s+that\b", re.IGNORECASE), "since"),
+
+    # 4. Empty Nominalizations & Abstractions
+    (re.compile(r"\bthe\s+concept\s+of\b", re.IGNORECASE), ""),
+    (re.compile(r"\bthe\s+process\s+of\b", re.IGNORECASE), ""),
+    (re.compile(r"\bthe\s+notion\s+of\b", re.IGNORECASE), ""),
+    (re.compile(r"\bthe\s+meaning\s+of\b", re.IGNORECASE), ""),
+    (re.compile(r"\bthe\s+topic\s+of\b", re.IGNORECASE), ""),
+    (re.compile(r"\bthe\s+subject\s+of\b", re.IGNORECASE), ""),
+    (re.compile(r"\bwhat\s+(?:is|are)\s+the\s+differences?\s+between\b", re.IGNORECASE), "difference between"),
+    (re.compile(r"\bwhat\s+is\s+the\s+definition\s+of\b", re.IGNORECASE), "define"),
+    (re.compile(r"\bthe\s+difference\s+between\b", re.IGNORECASE), "difference between"),
+    (re.compile(r"\bis\s+defined\s+as\b", re.IGNORECASE), "is"),
+    (re.compile(r"\bcan\s+be\s+defined\s+as\b", re.IGNORECASE), "is"),
+    (re.compile(r"\bis\s+referred\s+to\s+as\b", re.IGNORECASE), "is"),
+    (re.compile(r"\bis\s+known\s+as\b", re.IGNORECASE), "is"),
+    (re.compile(r"\bplays\s+a\s+role\s+in\b", re.IGNORECASE), "affects"),
+    (re.compile(r"\bis\s+responsible\s+for\b", re.IGNORECASE), "handles"),
+    (re.compile(r"\bpertaining\s+to\b", re.IGNORECASE), "regarding"),
+    (re.compile(r"\bin\s+relation\s+to\b", re.IGNORECASE), "regarding"),
+    (re.compile(r"\bin\s+connection\s+with\b", re.IGNORECASE), "regarding"),
+    (re.compile(r"\bwith\s+respect\s+to\b", re.IGNORECASE), "regarding"),
+    (re.compile(r"\bin\s+terms\s+of\b", re.IGNORECASE), "regarding"),
+    (re.compile(r"\bin\s+the\s+context\s+of\b", re.IGNORECASE), "in"),
+    (re.compile(r"\ba\s+variety\s+of\b", re.IGNORECASE), "various"),
+    (re.compile(r"\ba\s+wide\s+range\s+of\b", re.IGNORECASE), "various"),
+    (re.compile(r"\ball\s+of\s+the\b", re.IGNORECASE), "all"),
+    (re.compile(r"\beach\s+and\s+every\b", re.IGNORECASE), "each"),
+    (re.compile(r"\bone\s+and\s+the\s+same\b", re.IGNORECASE), "the same"),
+    (re.compile(r"\bfirst\s+and\s+foremost\b", re.IGNORECASE), "first"),
+    (re.compile(r"\bany\s+and\s+all\b", re.IGNORECASE), "all"),
+    (re.compile(r"\b(?:in\s+a\s+)?step\s+by\s+step(?:\s+manner)?\b", re.IGNORECASE), "step-by-step"),
+    (re.compile(r"\bin\s+a\s+detailed\s+(?:manner|way)\b", re.IGNORECASE), "in detail"),
+    (re.compile(r"\bwith\s+an?\s+example\b", re.IGNORECASE), "with example"),
+
+    # 5. Explanations & Inquiries Framing
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?tell\s+me\s+about\b", re.IGNORECASE), "explain "),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?tell\s+me\s+how\s+to\b", re.IGNORECASE), "how to "),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?tell\s+me\s+what\s+is\b", re.IGNORECASE), "what is "),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?tell\s+me\s+why\b", re.IGNORECASE), "why "),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?tell\s+me\b", re.IGNORECASE), ""),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?show\s+me\s+how\s+to\b", re.IGNORECASE), "how to "),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?(?:give|show)\s+me\s+an?\s+example\s+of\b", re.IGNORECASE), "example of "),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?provide\s+an?\s+example\s+of\b", re.IGNORECASE), "example of "),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?explain\s+to\s+me\s+what\s+is\b", re.IGNORECASE), "what is "),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?explain\s+to\s+me\b", re.IGNORECASE), "explain "),
+    (re.compile(r"\b(?:can\s+you\s+|could\s+you\s+|please\s+)?explain\s+about\b", re.IGNORECASE), "explain "),
+    (re.compile(r"\bi\s+(?:want|would\s+like)\s+to\s+know\s+what\s+is\b", re.IGNORECASE), "what is "),
+    (re.compile(r"\bi\s+(?:want|would\s+like)\s+to\s+know\s+how\s+to\b", re.IGNORECASE), "how to "),
+    (re.compile(r"\bi\s+(?:want|would\s+like)\s+to\s+know\s+about\b", re.IGNORECASE), "explain "),
+    (re.compile(r"\bi\s+(?:want|would\s+like)\s+to\s+know\b", re.IGNORECASE), ""),
+    (re.compile(r"\bi\s+(?:want|would\s+like)\s+to\s+learn\s+how\s+to\b", re.IGNORECASE), "how to "),
+    (re.compile(r"\bi\s+(?:want|would\s+like)\s+to\s+learn\s+about\b", re.IGNORECASE), "explain "),
+    (re.compile(r"\bi\s+(?:want|would\s+like)\s+to\s+learn\b", re.IGNORECASE), ""),
+    (re.compile(r"\bi\s+am\s+trying\s+to\b", re.IGNORECASE), ""),
+    (re.compile(r"\b(?:can|could)\s+you\s+explain\b", re.IGNORECASE), "explain"),
+    (re.compile(r"\bgive\s+me\s+some\s+information\s+about\b", re.IGNORECASE), "explain "),
+    (re.compile(r"\bgive\s+me\s+details\s+about\b", re.IGNORECASE), "explain "),
+    (re.compile(r"\bgive\s+me\s+an\s+overview\s+of\b", re.IGNORECASE), "overview of "),
+
+    # 6. Directives & Politeness
+    (re.compile(r"\bplease\s+make\s+sure\s+(?:that\s+)?\b", re.IGNORECASE), "ensure "),
+    (re.compile(r"\bmake\s+sure\s+(?:that\s+)?\b", re.IGNORECASE), "ensure "),
+    (re.compile(r"\bbe\s+sure\s+to\b", re.IGNORECASE), "ensure to "),
+    (re.compile(r"\bkeep\s+in\s+mind\s+that\b", re.IGNORECASE), "note: "),
+    (re.compile(r"\bdon't\s+forget\s+to\b", re.IGNORECASE), "ensure to "),
+    (re.compile(r"\byou\s+need\s+to\b", re.IGNORECASE), "must "),
+    (re.compile(r"\byou\s+have\s+to\b", re.IGNORECASE), "must "),
+
+    # 7. Original Verbose verb phrases
     (re.compile(r"\bmake\s+an\s+attempt\s+to\b", re.IGNORECASE), "attempt to"),
     (re.compile(r"\btake\s+into\s+consideration\b", re.IGNORECASE), "consider"),
     (re.compile(r"\bgive\s+consideration\s+to\b", re.IGNORECASE), "consider"),
@@ -24,7 +131,8 @@ WORDY_PHRASE_MAPPINGS: List[Tuple[re.Pattern, str]] = [
     (re.compile(r"\bmake\s+a\s+decision\b", re.IGNORECASE), "decide"),
     (re.compile(r"\bhas\s+the\s+ability\s+to\b", re.IGNORECASE), "can"),
     (re.compile(r"\bis\s+able\s+to\b", re.IGNORECASE), "can"),
-    # Verbose transition and constraint phrases
+
+    # 8. Original Verbose transition and constraint phrases
     (re.compile(r"\bit\s+is\s+(crucial|essential|mandatory|necessary)\s+that\b", re.IGNORECASE), "must"),
     (re.compile(r"\bit\s+is\s+required\s+to\b", re.IGNORECASE), "must"),
     (re.compile(r"\bin\s+spite\s+of\s+the\s+fact\s+that\b", re.IGNORECASE), "although"),
@@ -39,7 +147,8 @@ WORDY_PHRASE_MAPPINGS: List[Tuple[re.Pattern, str]] = [
     (re.compile(r"\bfor\s+the\s+purpose\s+of\b", re.IGNORECASE), "for"),
     (re.compile(r"\ba\s+large\s+number\s+of\b", re.IGNORECASE), "many"),
     (re.compile(r"\ba\s+small\s+number\s+of\b", re.IGNORECASE), "few"),
-    # Tautologies / Pleonasms (redundant paired adjectives)
+
+    # 9. Original Tautologies / Pleonasms (redundant paired adjectives)
     (re.compile(r"\badvance\s+planning\b", re.IGNORECASE), "planning"),
     (re.compile(r"\bend\s+result\b", re.IGNORECASE), "result"),
     (re.compile(r"\bfinal\s+outcome\b", re.IGNORECASE), "outcome"),
@@ -57,7 +166,7 @@ INTENT_QUESTION_MARKERS: Set[str] = {
 PRUNABLE_FUNCTION_STOPWORDS: Set[str] = {
     "the", "a", "an", "very", "extremely", "basically", "actually",
     "literally", "honestly", "really", "totally", "simply", "just",
-    "somewhat", "perhaps", "maybe", "obviously", "clearly"
+    "somewhat", "perhaps", "maybe", "obviously", "clearly", "its", "our", "their"
 }
 
 
@@ -90,12 +199,17 @@ class RuleBasedTextCompressor:
         applied: List[str] = []
 
         for pattern, replacement in self.mappings:
-            match = pattern.search(text)
-            if match:
-                matched_str = match.group(0)
+            matches = list(pattern.finditer(text))
+            if matches:
+                for match in matches:
+                    matched_str = match.group(0).strip()
+                    substituted = pattern.sub(replacement, match.group(0)).strip()
+                    compacted_count += 1
+                    if substituted:
+                        applied.append(f"Compacted '{matched_str}' -> '{substituted}'")
+                    else:
+                        applied.append(f"Pruned redundant phrase '{matched_str}'")
                 text = pattern.sub(replacement, text)
-                compacted_count += 1
-                applied.append(f"Compacted '{matched_str}' -> '{replacement}'")
 
         return text, compacted_count, applied
 

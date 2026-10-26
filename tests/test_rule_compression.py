@@ -50,3 +50,16 @@ def test_filler_stopword_pruning():
     assert "simply" not in report.compressed_text.lower()
     assert "consider using a graph structure" in report.compressed_text.lower()
     assert report.stopwords_pruned >= 3
+
+
+def test_code_prompt_framing_and_pleonasm_compaction():
+    compressor = RuleBasedTextCompressor()
+    text = "write a code in python to print a fibonnaci series and also define its variant ?"
+
+    report = compressor.compress(text, aggressive=False)
+
+    assert "write a code in python to" not in report.compressed_text
+    assert "write python code to" in report.compressed_text
+    assert "and also" not in report.compressed_text
+    assert "print fibonnaci series" in report.compressed_text
+    assert report.phrases_compacted >= 2

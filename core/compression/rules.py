@@ -13,13 +13,31 @@ CONVERSATIONAL_BOILERPLATE: List[Tuple[re.Pattern, str]] = [
     (re.compile(r"\b(please\s+kindly|kindly\s+please|please|kindly)\b\s*", re.IGNORECASE), ""),
     (re.compile(r"\bi\s+(am\s+looking\s+to|want\s+to|would\s+like\s+to|was\s+wondering\s+if\s+you\s+(could|might\s+be\s+able\s+to))\b\s*", re.IGNORECASE), ""),
     (re.compile(r"\bi\s+need\s+you\s+to\b\s*", re.IGNORECASE), ""),
-    (re.compile(r"\b(assist\s+me\s+in|help\s+me\s+to|help\s+me\s+with)\b\s*", re.IGNORECASE), ""),
+    (re.compile(r"\b(assist\s+me\s+in|help\s+me\s+to|help\s+me\s+with|assist\s+me\s+and|help\s+me\s+and|assist\s+me|help\s+me)\b\s*", re.IGNORECASE), ""),
+    (re.compile(r"\band\s+(can\s+you\s+|could\s+you\s+)?(please\s+)?(tell|show|give|provide)\s+(me|us)\b\s*(about)?\s*", re.IGNORECASE), "and "),
+    (re.compile(r"\b(can\s+you\s+|could\s+you\s+)?(please\s+)?(tell|show|give|provide)\s+(me|us)\b\s*(about)?\s*", re.IGNORECASE), ""),
+    (re.compile(r"\b(explain\s+to\s+(me|us)|share\s+with\s+(me|us))\b\s*(about)?\s*", re.IGNORECASE), "explain "),
     (re.compile(r"\b(as\s+an\s+ai|as\s+a\s+language\s+model)[,\s]*", re.IGNORECASE), ""),
+
+    # Prompt Request Framing & Meta-queries
+    (re.compile(r"\bi\s+want\s+to\s+know\s+what\s+is\b", re.IGNORECASE), "what is "),
+    (re.compile(r"\bi\s+want\s+to\s+know\s+how\s+to\b", re.IGNORECASE), "how to "),
+    (re.compile(r"\bi\s+want\s+to\s+know\s+about\b", re.IGNORECASE), "explain "),
+    (re.compile(r"\bi\s+(want|would\s+like)\s+to\s+(know|learn)\b\s*", re.IGNORECASE), ""),
+    (re.compile(r"\bi\s+am\s+trying\s+to\b\s*", re.IGNORECASE), ""),
+    (re.compile(r"\b(?:can|could)\s+you\s+explain\b", re.IGNORECASE), "explain"),
+
+    # Redundant determiners & Capability clauses
+    (re.compile(r"\b(the\s+some|a\s+some|some\s+of\s+the)\b", re.IGNORECASE), "some"),
+    (re.compile(r"\b(where|so\s+that|in\s+order\s+that)\s+(i|we|you)\s+can\b", re.IGNORECASE), "to"),
+    (re.compile(r"\bhow\s+(i|we|you)\s+can\b", re.IGNORECASE), "how to"),
+    (re.compile(r"\b(wonderfull?|awesome|fantastic|superb)\b\s*", re.IGNORECASE), ""),
 
     # Multilingual Openings (Hindi, Spanish, French)
     (re.compile(r"\b(नमस्ते|नमस्कार|प्रणाम)\b[\s,!.]*", re.IGNORECASE), ""),
     (re.compile(r"\b(कृपया|कृप्या)\b\s*", re.IGNORECASE), ""),
     (re.compile(r"\bक्या\s+आप\s+(मुझे\s+)?(बता\s+सकते\s+हैं\s+कि\s*)?", re.IGNORECASE), ""),
+    (re.compile(r"\bऔर\s+यह\s+भी\s+(बताइए\s+कि\s*)?", re.IGNORECASE), "और "),
     (re.compile(r"\b(hola|buenos\s+d[ií]as|buenas\s+tardes)\b[\s,!.]*", re.IGNORECASE), ""),
     (re.compile(r"\b(por\s+favor|hazme\s+el\s+favor\s+de)\b\s*", re.IGNORECASE), ""),
     (re.compile(r"\b(bonjour|salut)\b[\s,!.]*", re.IGNORECASE), ""),
@@ -47,6 +65,7 @@ PUNCTUATION_REDUNDANCY: List[Tuple[re.Pattern, str]] = [
     (re.compile(r"\?{2,}"), "?"),
     (re.compile(r"!{2,}"), "!"),
     (re.compile(r"\.{4,}"), "..."),
+    (re.compile(r"\s+([?!.,;:])"), r"\1"),
     (re.compile(r"[ \t]+"), " "),
     (re.compile(r"\n{3,}"), "\n\n"),
 ]
@@ -78,5 +97,8 @@ SEMANTIC_ANCHORS: Set[str] = {
 LOW_INFO_FILLERS: Set[str] = {
     "basically", "actually", "literally", "honestly", "really",
     "totally", "simply", "just", "kind of", "sort of", "somewhat",
-    "quite", "perhaps", "maybe", "obviously", "clearly", "essentially"
+    "quite", "perhaps", "maybe", "obviously", "clearly", "essentially",
+    "definitely", "certainly", "surely", "undoubtedly", "absolutely",
+    "frankly", "truthfully",
+    "wonderful", "wonderfull", "awesome", "amazing", "superb"
 }

@@ -79,3 +79,14 @@ def test_compression_speed_latency():
 
     # Non-AI compression must execute in under 10 milliseconds
     assert res.latency_ms < 10.0
+
+
+def test_user_query_compression():
+    compressor = NonAITokenCompressor()
+    prompt = "write a code in python to print a fibonnaci series and also define its variant ?"
+    res = compressor.compress(prompt, level=CompressionLevel.BALANCED)
+
+    assert "write python code to print fibonnaci series and define its variant?" == res.compressed_text
+    assert res.tokens_saved > 0
+    assert res.compression_ratio_pct > 20.0
+    assert len(res.rules_applied) >= 3

@@ -1,7 +1,7 @@
 # Optimizing AI Architecture for Long-Term Memory and Efficiency
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-54%20passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-69%20passed-brightgreen.svg)](tests/)
 [![Streamlit](https://img.shields.io/badge/dashboard-Streamlit-FF4B4B.svg)](app.py)
 [![License](https://img.shields.io/badge/license-Academic%20Research-purple.svg)](README.md)
 
@@ -159,6 +159,15 @@ This repository contains the complete production-grade implementation of the **C
     - **AST Code Equivalence:** Parses returned code blocks with `ast.parse` to confirm identical function signatures and logic.
 - **Conclusive Examiner Proof:** Empirically demonstrates **0.0% intelligence loss** and **100% answer correctness**, proving that compression stripped exclusively conversational fluff and zero intellectual signal.
 - **Dual Execution Engine:** Supports live OpenAI frontier API endpoints when an API key is provided, alongside a zero-dependency **Deterministic Frontier Simulation Engine** for 100% offline academic presentations.
+
+### Module 11: Token-Efficient Direct Code Editing System (`core/editor/`)
+- **Core Principle:** *"Use ordinary code to locate and apply simple changes, and use the AI model only when reasoning is actually necessary."*
+- **3-Tier Routing Architecture:**
+  - **Tier 1: Direct Zero-Token Edit (0 LLM Calls | 0 Tokens Consumed):** Deterministic AST-guided line-targeting and word-boundary substitutions for assignments (`a = 10 to a = 12`), configuration values, and symbol renames. Executes in $<1\text{ ms}$ with **100% token savings**.
+  - **Tier 2: Targeted Micro-Context Retrieval (Minimal Tokens):** Locates the exact function, class, or 5-10 line execution block using AST boundaries, extracting only the micro-snippet for LLM processing rather than reading the entire 1,000+ line file.
+  - **Tier 3: Deep Reasoning (Full Context):** Escalates to full context and multi-step reasoning strictly when open-ended bugs or complex cross-file refactoring is required.
+- **Minimal Patch Engine (`patch_engine.py`):** Produces standard unified diffs and enforces structural AST syntax validation (`ast.parse`) before saving.
+- **Instant Rollback & Snapshot Engine:** Every edit generates an immutable snapshot with instant, zero-data-loss rollback capability.
 
 ---
 

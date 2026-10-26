@@ -101,11 +101,18 @@ class NonAITokenCompressor:
             text = text.replace(placeholder, code_content)
         return text
 
-    def _clean_conversational_boilerplate(self, text: str) -> str:
+    def _clean_conversational_boilerplate(self, text: str) -> Tuple[str, List[str]]:
         """Applies regex heuristics to strip conversational greeting and closing fluff."""
+        applied: List[str] = []
         for pattern, replacement in CONVERSATIONAL_BOILERPLATE:
-            text = pattern.sub(replacement, text)
-        return text
+            matches = list(pattern.finditer(text))
+            if matches:
+                for match in matches:
+                    matched_str = match.group(0).strip()
+                    if matched_str:
+                        applied.append(f"Boilerplate: Pruned '{matched_str}'")
+                text = pattern.sub(replacement, text)
+        return text, applied
 
     def _prune_filler_words(self, text: str, level: CompressionLevel) -> str:
         """
@@ -190,7 +197,8 @@ class NonAITokenCompressor:
                 )
 
         # Step 3: Strip Conversational Boilerplate
-        processed = self._clean_conversational_boilerplate(shielded_text)
+        processed, bp_rules = self._clean_conversational_boilerplate(shielded_text)
+        all_rules_applied.extend(bp_rules)
 
         # Step 4: Rule-Based Wordy Phrase Compaction & Stopwords (Topic 4)
         if level in [CompressionLevel.BALANCED, CompressionLevel.AGGRESSIVE]:
