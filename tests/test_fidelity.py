@@ -100,3 +100,49 @@ def test_pipeline_fidelity_integration():
     payload = pipeline.process(prompt, run_ab_fidelity=True)
     assert payload.ab_fidelity is not None
     assert "composite_fidelity_pct" in payload.ab_fidelity["metrics"]
+
+
+def test_chemistry_and_physics_fidelity():
+    engine = DeterministicFrontierEngine()
+    
+    # Chemistry verification
+    chem_raw = engine.generate("what is chemistry?", is_compressed=False)
+    chem_comp = engine.generate("what is chemistry?", is_compressed=True)
+    assert "Chemistry" in chem_raw
+    assert "Central Science" in chem_raw or "atoms" in chem_raw
+    assert "Periodic Table" in chem_raw or "Chemical Bonds" in chem_raw
+    assert "Chemistry" in chem_comp
+    assert "Reaction Framework Matrix" in chem_comp
+
+    # Physics with structure and architecture verification
+    phys_q = "what is physics write the the structure and definition, advantages and its disadvantages and draw architecture of it ?"
+    phys_raw = engine.generate(phys_q, is_compressed=False)
+    phys_comp = engine.generate(phys_q, is_compressed=True)
+    assert "Physics" in phys_raw
+    assert "Classical Mechanics" in phys_raw
+    assert "Electromagnetism" in phys_raw
+    assert "Thermodynamics" in phys_raw
+    assert "Quantum Mechanics" in phys_raw
+    assert "Advantages" in phys_raw
+    assert "Disadvantages" in phys_raw
+    assert "Architecture" in phys_raw
+    assert "Theoretical Framework Matrix" in phys_comp
+
+    # End-to-end evaluation
+    evaluator = FidelityEvaluator()
+    m_chem = evaluator.evaluate(chem_raw, chem_comp)
+    assert m_chem.composite_fidelity_pct >= 90.0
+    assert m_chem.intelligence_loss_pct == 0.0
+
+    m_phys = evaluator.evaluate(phys_raw, phys_comp)
+    assert m_phys.composite_fidelity_pct >= 90.0
+    assert m_phys.intelligence_loss_pct == 0.0
+
+
+def test_dynamic_open_topic_fidelity():
+    pipeline = LocalPreProcessingPipeline()
+    res = pipeline.run_fidelity_ab_test("what is economics?")
+    assert "Economics" in res.output_a
+    assert "Economics" in res.output_b
+    assert res.metrics.composite_fidelity_pct >= 90.0
+    assert res.metrics.intelligence_loss_pct == 0.0

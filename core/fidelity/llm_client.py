@@ -48,17 +48,39 @@ class DeterministicFrontierEngine:
         "at", "the", "present", "time", "thanks", "a", "lot", "can", "tell",
         "write", "create", "provide", "show", "is", "are", "what", "how", "why",
         "that", "this", "which", "with", "from", "and", "or", "of", "about",
-        "do", "does", "did", "give", "code", "python", "script", "function", "program"
+        "do", "does", "did", "give", "code", "python", "script", "function", "program",
+        "its", "in", "on", "as", "by", "an", "also"
+    }
+
+    ASPECT_KEYWORDS = {
+        "structure", "definition", "define", "advantages", "advantage", "benefit", "benefits",
+        "disadvantages", "disadvantage", "drawback", "drawbacks", "limit", "limits", "limitations",
+        "draw", "architecture", "diagram", "schematic", "framework", "components", "parts",
+        "variant", "variants", "types", "branches", "categories", "classification",
+        "features", "characteristics", "overview", "detail", "details", "summary",
+        "example", "examples", "application", "applications", "uses", "usage", "use",
+        "difference", "differences", "comparison", "versus", "vs", "meaning"
     }
 
     @classmethod
     def _extract_clean_topic(cls, prompt: str) -> str:
-        """Extracts the true semantic topic by filtering out conversational noise."""
-        words = re.findall(r"\b[A-Za-z0-9_\-\.\#\+\']+\b", prompt)
-        clean = [w for w in words if w.lower() not in cls.STOPWORDS and len(w) > 1]
-        if not clean:
-            return "General Computational Task"
-        return " ".join(clean[:6])
+        """Extracts the true semantic topic by filtering out conversational noise and aspect words."""
+        # Strip IR tags if present
+        clean_prompt = re.sub(r"\[[A-Z0-9_\-]+:[^\]]*\]", " ", prompt)
+        clean_prompt = re.sub(r"\[COMPRESSED\]", " ", clean_prompt)
+        words = re.findall(r"\b[A-Za-z0-9_\-\.\#\+\']+\b", clean_prompt)
+
+        # Filter out stopwords
+        non_stopwords = [w for w in words if w.lower() not in cls.STOPWORDS and len(w) > 1]
+
+        # Filter out aspect words (structure, definition, advantages, draw, architecture, etc.)
+        core_topic_words = [w for w in non_stopwords if w.lower() not in cls.ASPECT_KEYWORDS]
+
+        if core_topic_words:
+            return " ".join(core_topic_words[:4])
+        if non_stopwords:
+            return " ".join(non_stopwords[:4])
+        return "General Domain Concepts"
 
     @classmethod
     def _extract_intent_and_entities(cls, prompt: str) -> Dict[str, Any]:
@@ -74,12 +96,28 @@ class DeterministicFrontierEngine:
         is_distributed = "sharded" in p_lower or "cache" in p_lower or "concurrency" in p_lower or "consistent hash" in p_lower
         is_capital_of_france = "france" in p_lower and ("capital" in p_lower or "paris" in p_lower)
 
+        # Aspect detection
+        wants_definition = any(k in p_lower for k in ["definition", "define", "what is", "meaning", "concept"])
+        wants_structure = any(k in p_lower for k in ["structure", "component", "parts", "layers", "hierarchy"])
+        wants_advantages = any(k in p_lower for k in ["advantage", "benefit", "pros", "merit", "strengths"])
+        wants_disadvantages = any(k in p_lower for k in ["disadvantage", "drawback", "limit", "cons", "challenge", "demerit"])
+        wants_architecture = any(k in p_lower for k in ["architecture", "draw", "diagram", "schematic", "framework", "flowchart"])
+        wants_branches = any(k in p_lower for k in ["branche", "types", "classification", "subfield", "categories"])
+        wants_applications = any(k in p_lower for k in ["application", "use case", "real-world", "practical", "usage"])
+
         return {
             "has_code": has_code,
             "is_hindi": is_hindi,
             "is_rag_reasoning": is_rag_reasoning,
             "is_distributed": is_distributed,
             "is_capital_of_france": is_capital_of_france,
+            "wants_definition": wants_definition,
+            "wants_structure": wants_structure,
+            "wants_advantages": wants_advantages,
+            "wants_disadvantages": wants_disadvantages,
+            "wants_architecture": wants_architecture,
+            "wants_branches": wants_branches,
+            "wants_applications": wants_applications,
             "prompt_lower": p_lower,
             "clean_topic": cls._extract_clean_topic(prompt),
         }
@@ -763,6 +801,554 @@ class DeterministicFrontierEngine:
         # 3. DOMAIN CONCEPTUAL KNOWLEDGE BASE
         # =========================================================================
 
+        # Physics / Mechanics / Thermodynamics / Quantum / Relativity
+        if any(k in p for k in ["physics", "quantum mechanics", "thermodynamics", "electromagnetism", "classical mechanics", "relativity", "newton", "gravity", "kinematics"]):
+            if not is_compressed:
+                return (
+                    "Hello! Here is an in-depth, structured scientific overview of **Physics**, including its definition, fundamental structure, key advantages, limitations, and conceptual architecture:\n\n"
+                    "### 1. Definition of Physics:\n"
+                    "**Physics** is the fundamental branch of natural science that investigates matter, energy, motion, spacetime, and the universal forces governing all physical reality—from subatomic quarks and gluons to the macroscopic cosmic expansion of galaxies. "
+                    "It seeks to formalize how the universe behaves through rigorous mathematical laws, empirical experimentation, and theoretical modeling.\n\n"
+                    "### 2. Fundamental Structure & Core Pillars:\n"
+                    "- **Classical Mechanics (Newtonian)**: Governs kinematics, dynamics, work-energy principles, and gravitation for macroscopic bodies: $\\vec{F} = m\\vec{a}$, $F_g = G\\frac{m_1 m_2}{r^2}$.\n"
+                    "- **Electromagnetism**: Formulated by Maxwell's four differential equations unifying electric fields, magnetic flux, and electromagnetic wave radiation (optics, radio, X-rays).\n"
+                    "- **Thermodynamics & Statistical Physics**: Explores heat, work, entropy ($\\Delta S \\ge 0$), and thermodynamic equilibrium through the 1st, 2nd, and 3rd laws of thermodynamics.\n"
+                    "- **Quantum Mechanics**: Describes the probabilistic behavior of subatomic particles, wave-particle duality (de Broglie), Planck's constant ($h$), Heisenberg uncertainty, and the Schrödinger wave equation.\n"
+                    "- **Relativity (Special & General)**: Einstein's formulation of mass-energy equivalence ($E = mc^2$) and gravity as the geometric curvature of 4D spacetime ($G_{\\mu\\nu} = \\frac{8\\pi G}{c^4}T_{\\mu\\nu}$).\n\n"
+                    "### 3. Key Advantages & Technological Impact:\n"
+                    "- **Foundation for Modern Technology**: Direct origin of semiconductors, microprocessors, lasers, telecommunications, fiber optics, MRI medical imaging, and aerospace flight.\n"
+                    "- **High-Precision Predictive Modeling**: Enables precise trajectories for GPS satellites, planetary space probes, and meteorological weather forecasts.\n"
+                    "- **Energy Innovation**: Underpins nuclear energy (fission/fusion), solar photovoltaics, wind turbines, and grid power transmission.\n\n"
+                    "### 4. Disadvantages & Frontier Theoretical Limitations:\n"
+                    "- **Unification Paradox (Quantum Gravity)**: General Relativity (smooth spacetime) and Quantum Mechanics (discrete probability) remain mathematically incompatible at the Planck scale.\n"
+                    "- **Extreme Experimental Costs**: Modern breakthroughs require multi-billion-dollar international facilities such as the CERN Large Hadron Collider (LHC) and the James Webb Space Telescope (JWST).\n"
+                    "- **Analytical Non-Linearity**: Non-linear multi-body quantum states and fluid turbulence (Navier-Stokes) cannot be solved analytically and require supercomputing approximations.\n\n"
+                    "### 5. Conceptual Architecture of Physical Reality:\n"
+                    "```\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  COSMOLOGICAL & SPACETIME SCALE                |\n"
+                    "|       (General Relativity, Gravitational Waves, Dark Matter)   |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                   MACROSCOPIC CLASSICAL DOMAIN                 |\n"
+                    "|      (Newtonian Mechanics, Thermodynamics, Electromagnetism)   |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  SUBATOMIC & QUANTUM FIELD REGIME              |\n"
+                    "|      (Standard Model, Wave-Particle Duality, Quantum States)   |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                FOUR FUNDAMENTAL FORCES OF NATURE               |\n"
+                    "|    [ Gravity ]  [ Electromagnetism ]  [ Strong ]  [ Weak ]     |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "```\n\n"
+                    "I hope this comprehensive overview provides a clear and deep understanding of physics! Let me know if you would like to explore any specific branch or equation."
+                )
+            else:
+                return (
+                    "**Physics: Formal Technical Specifications & Theoretical Framework Matrix**\n\n"
+                    "### 1. Formal Technical Definition\n"
+                    "Physics is the fundamental natural science formalizing the quantitative dynamics of matter, energy, momentum, spacetime, and the four fundamental forces (gravitational, electromagnetic, strong nuclear, weak nuclear) via continuous differential equations and discrete quantum field operators.\n\n"
+                    "### 2. Theoretical Architecture & Specification Matrix\n"
+                    "| Physical Discipline | Mathematical Invariant | Governing Law / Equation | Operational Physical Scope |\n"
+                    "| :--- | :--- | :--- | :--- |\n"
+                    "| **Classical Mechanics** | $\\vec{F} = \\frac{d\\vec{p}}{dt} = m\\vec{a}$ | Conservation of Energy & Momentum | Macroscopic kinematics ($v \\ll c$) |\n"
+                    "| **Electromagnetism** | Maxwell's Equations ($\\nabla \\times \\vec{E}, \\nabla \\cdot \\vec{B}$) | Lorentz Force: $\\vec{F} = q(\\vec{E} + \\vec{v} \\times \\vec{B})$ | Microscopic to cosmic EM wave spectrum |\n"
+                    "| **Thermodynamics** | $dU = TdS - PdV$, $\\Delta S \\ge 0$ | 1st, 2nd, 3rd Thermodynamic Laws | Macroscopic heat engines & entropy bounds |\n"
+                    "| **Quantum Mechanics** | $i\\hbar \\frac{\\partial}{\\partial t}\\Psi = \\hat{H}\\Psi$ | Heisenberg Uncertainty ($\\Delta x \\Delta p \\ge \\frac{\\hbar}{2}$) | Subatomic particles & atomic orbitals |\n"
+                    "| **Relativistic Spacetime** | $G_{\\mu\\nu} = \\frac{8\\pi G}{c^4}T_{\\mu\\nu}$ | Mass-Energy Equivalence ($E = mc^2$) | Relativistic velocities ($v \\approx c$) & gravity curvature |\n\n"
+                    "### 3. Physical Hierarchy Pipeline\n"
+                    "`Fundamental Interactions (Gravity, EM, Strong, Weak) -> Quantum Matter Fields -> Atomic/Molecular Systems -> Classical Dynamics -> Relativistic Spacetime`\n\n"
+                    "**Execution Summary**: Unified empirical modeling of physical reality spanning subatomic quantum probability amplitudes to general relativistic spacetime geometry."
+                )
+
+        # Chemistry / Atoms / Molecules / Periodic Table / Chemical Reactions
+        if any(k in p for k in ["chemistry", "chemical", "periodic table", "organic chemistry", "inorganic chemistry", "biochemistry", "molecule", "covalent", "stoichiometry", "bonding", "acid", "base"]):
+            if not is_compressed:
+                return (
+                    "Hello! Here is an in-depth, structured scientific overview of **Chemistry**, including its definition, atomic foundations, core branches, practical advantages, and hazards:\n\n"
+                    "### 1. Definition of Chemistry:\n"
+                    "**Chemistry** is the natural science that investigates the composition, structure, properties, behavior, and energetic transformations of matter. "
+                    "Often described as the **'Central Science'**, chemistry bridges fundamental physics (atomic forces and energy states) with biology (cellular processes, genetics, and ecology) by focusing on how atoms bond, rearrange, and interact.\n\n"
+                    "### 2. Fundamental Foundations & Atomic Structure:\n"
+                    "- **Atoms & the Periodic Table**: All matter consists of atoms containing a central nucleus (protons and neutrons) surrounded by electron orbitals. The 118 chemical elements are organized in the Periodic Table by atomic number ($Z$) and valence electron periodicity.\n"
+                    "- **Chemical Bonds**:\n"
+                    "  * *Covalent Bonds*: Sharing of electron pairs between non-metal atoms (e.g., $\\text{H}_2\\text{O}$, $\\text{CH}_4$).\n"
+                    "  * *Ionic Bonds*: Electrostatic transfer of valence electrons from metals to non-metals forming ionic crystal lattices (e.g., $\\text{NaCl}$).\n"
+                    "  * *Metallic & Hydrogen Bonds*: Delocalized electron seas in metals and polar electrostatic dipole attractions between electronegative atoms.\n"
+                    "- **Stoichiometry & Reaction Kinetics**: Conservation of mass dictates that atoms are conserved in chemical reactions. Reactions proceed based on activation energy barriers ($E_a$), catalysis, and Gibbs free energy: $\\Delta G = \\Delta H - T\\Delta S$.\n\n"
+                    "### 3. Major Branches of Chemistry:\n"
+                    "- **Organic Chemistry**: Focuses on carbon-based compounds, hydrocarbons, functional groups, and macromolecular synthesis.\n"
+                    "- **Inorganic Chemistry**: Studies minerals, organometallics, transition metals, catalysis, and crystal coordination chemistry.\n"
+                    "- **Physical Chemistry**: Applies quantum mechanics, thermodynamics, spectroscopy, and reaction kinetics to chemical systems.\n"
+                    "- **Analytical Chemistry**: Develops qualitative and quantitative methods to identify and measure substances (chromatography, mass spectrometry, titration).\n"
+                    "- **Biochemistry**: Examines the chemical processes within living organisms, including enzyme catalysis, nucleic acids (DNA/RNA), lipids, and proteins.\n\n"
+                    "### 4. Advantages & Real-World Impact:\n"
+                    "- **Life-Saving Pharmaceuticals**: Enables targeted rational drug design for antibiotics, vaccines, cancer therapies, and analgesics.\n"
+                    "- **Energy & Battery Storage**: Fundamental to lithium-ion batteries, solid-state electrolytes, and hydrogen fuel cells.\n"
+                    "- **Materials Science**: Synthesizes high-performance polymers, semiconductors, carbon fiber composites, and nanomaterials.\n\n"
+                    "### 5. Disadvantages & Environmental Hazards:\n"
+                    "- **Persistent Pollution & Toxic Waste**: Chemical byproducts, heavy metals, and persistent organic pollutants (PFAS) resist natural degradation.\n"
+                    "- **Hazardous Reaction Risks**: Flammable solvents, volatile organic compounds (VOCs), and exothermic runaway reaction hazards.\n\n"
+                    "### 6. Conceptual Architecture of Chemical Systems:\n"
+                    "```\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  MACROMOLECULES & LIVING SYSTEMS               |\n"
+                    "|        (Biochemistry: DNA, Enzymes, Proteins, Metabolites)     |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  MOLECULAR DYNAMICS & REACTIONS                |\n"
+                    "|      (Stoichiometry, Kinetics, Gibbs Energy: dG = dH - TdS)    |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  CHEMICAL BONDING & VALENCE SHELLS             |\n"
+                    "|       (Covalent, Ionic, Metallic, Polar Hydrogen Bonds)        |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  ATOMIC NUCLEI & ELECTRON ORBITALS             |\n"
+                    "|        (Protons, Neutrons, Electrons, Periodic Table Elements) |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "```\n\n"
+                    "I hope this comprehensive overview clarifies the foundations and applications of chemistry! Let me know if you would like to explore specific reaction mechanisms or molecular structures."
+                )
+            else:
+                return (
+                    "**Chemistry: Formal Technical Specifications & Reaction Framework Matrix**\n\n"
+                    "### 1. Formal Technical Definition\n"
+                    "Chemistry is the empirical physical science formalizing atomic electron configurations, molecular orbital interactions, chemical bonding primitives, and thermodynamic reaction kinetics governed by valence shell periodicity and mass-energy conservation.\n\n"
+                    "### 2. Chemical Architecture & Subdiscipline Specification Matrix\n"
+                    "| Chemical Discipline | Reactive Mechanism | Governing Thermodynamic Invariant | Operational & Industrial Application |\n"
+                    "| :--- | :--- | :--- | :--- |\n"
+                    "| **Organic Chemistry** | Nucleophilic/Electrophilic substitution & addition | Carbon orbital hybridization ($sp^3, sp^2, sp$) | Pharmaceutical drug synthesis & polymer design |\n"
+                    "| **Inorganic Chemistry** | Coordination ligand exchange & redox electron transfer | Crystal field stabilization & oxidation states | Industrial catalysis, battery cathodes & metallurgy |\n"
+                    "| **Physical Chemistry** | Transition state theory & molecular orbital overlap | Gibbs Free Energy ($\\Delta G = \\Delta H - T\\Delta S$) | Reaction kinetics, electrochemistry & spectroscopy |\n"
+                    "| **Analytical Chemistry** | Chromatographic elution & mass-to-charge ($m/z$) assay | Beer-Lambert Law ($A = \\varepsilon c l$) | High-resolution mass spectrometry & purity validation |\n"
+                    "| **Biochemistry** | Enzyme-substrate active site lock-and-key catalysis | Michaelis-Menten kinetics ($V = \\frac{V_{\\max}[S]}{K_m + [S]}$) | Metabolic pathways, DNA replication & proteomics |\n\n"
+                    "### 3. Reaction Synthesis Pipeline\n"
+                    "`Reactant Precursors -> Activation Energy Barrier (E_a) -> Transition State Intermediate -> Product Formation + Enthalpy Transfer (\\Delta H)`\n\n"
+                    "**Execution Summary**: Molecular orbital hybridization, stoichiometric valence conservation, and Gibbs free energy-driven reaction dynamics."
+                )
+
+        # Biology / Life Sciences / Genetics / DNA / Photosynthesis
+        if any(k in p for k in ["biology", "photosynthesis", "genetics", "dna", "rna", "cellular", "evolution", "ecology", "mitochondria", "organism", "protein synthesis"]):
+            if not is_compressed:
+                return (
+                    "Hello! Here is an in-depth, structured scientific overview of **Biology**, including its definition, cellular foundations, genetics, advantages, and ethical considerations:\n\n"
+                    "### 1. Definition of Biology:\n"
+                    "**Biology** is the natural science devoted to the study of life and living organisms, including their cellular structure, biochemical processes, molecular interactions, physiological mechanisms, evolutionary adaptation, and ecological relationships.\n\n"
+                    "### 2. Core Pillars & Biological Hierarchy:\n"
+                    "- **Cell Theory**: The cell is the universal structural and functional unit of all living organisms. Organelles (nucleus, mitochondria, ribosomes) execute metabolic respiration and energy conversion via ATP.\n"
+                    "- **The Central Dogma of Molecular Biology**: Governs the directional transfer of genetic sequence information:\n"
+                    "  `DNA (Replication) -> Transcription -> Messenger RNA (mRNA) -> Translation -> Functional Polypeptide Protein`\n"
+                    "- **Photosynthesis & Cellular Respiration**:\n"
+                    "  * *Photosynthesis*: Autotrophic conversion of solar photons into chemical carbohydrates: $6\\text{CO}_2 + 6\\text{H}_2\\text{O} + \\text{light} \\to \\text{C}_6\\text{H}_{12}\\text{O}_6 + 6\\text{O}_2$.\n"
+                    "  * *Cellular Respiration*: Aerobic catabolism generating 36-38 ATP molecules per glucose molecule.\n"
+                    "- **Evolution & Natural Selection**: Darwinian adaptive radiation driven by random genetic mutations, genetic drift, and differential reproductive fitness over geological timescales.\n\n"
+                    "### 3. Major Branches of Biology:\n"
+                    "- **Molecular Biology & Genetics**: DNA sequencing, genomics, gene expression regulation, and recombinant DNA technology.\n"
+                    "- **Physiology & Anatomy**: Organ systems, homeostasis, nervous signal transduction, and endocrine regulation.\n"
+                    "- **Ecology & Evolutionary Biology**: Biodiversity, biogeochemical nutrient cycles, and organism-environment interactions.\n"
+                    "- **Microbiology & Virology**: Bacteria, archaea, fungi, viruses, and immune defense mechanisms.\n\n"
+                    "### 4. Key Advantages & Biotechnological Applications:\n"
+                    "- **Precision Medicine & Gene Therapy**: CRISPR-Cas9 genome editing, mRNA vaccines, monoclonal antibodies, and targeted cancer immunotherapies.\n"
+                    "- **Agricultural Productivity**: Genetically modified drought-resistant crops, bio-fertilizers, and sustainable food security.\n"
+                    "- **Environmental Conservation**: Bioremediation using engineered microorganisms to degrade environmental hydrocarbons and plastic waste.\n\n"
+                    "### 5. Ethical Dilemmas & Bio-Risks:\n"
+                    "- **Genetic Editing Dilemmas**: Ethical boundaries surrounding human germline modifications and gene drives.\n"
+                    "- **Pathogen Virulence & Antimicrobial Resistance**: Evolution of multidrug-resistant bacterial strains (superbugs) and pandemic biosecurity hazards.\n\n"
+                    "### 6. Architecture of Biological Systems:\n"
+                    "```\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  GLOBAL BIOSPHERE & ECOSYSTEMS                 |\n"
+                    "|         (Biomes, Communities, Trophic Food Webs, Biodiversity) |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  ORGANISMS & PHYSIOLOGICAL SYSTEMS             |\n"
+                    "|        (Homeostasis, Nervous Coordination, Organ Tissues)      |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  CELLULAR ORGANELLES & METABOLISM              |\n"
+                    "|       (Mitochondria ATP Synthesis, Ribosomes, Membranes)       |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  MOLECULAR GENETICS & BIOMOLECULES             |\n"
+                    "|        (Central Dogma: DNA -> RNA -> Proteins, Enzymes)        |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "```\n\n"
+                    "I hope this comprehensive guide illuminates the fascinating domain of biology! Let me know if you would like to delve into genetics, photosynthesis, or cellular pathways."
+                )
+            else:
+                return (
+                    "**Biology: Formal Technical Specifications & Molecular Systems Matrix**\n\n"
+                    "### 1. Formal Technical Definition\n"
+                    "Biology is the empirical natural science formalizing cellular physiology, macromolecular genetic information replication, metabolic energy transduction (ATP), and evolutionary population adaptation governed by the Central Dogma.\n\n"
+                    "### 2. Biological Architecture & Subsystem Specification Matrix\n"
+                    "| Biological Hierarchy | Primary Operational Primitive | Governing Biochemical Invariant | Functional Output Standard |\n"
+                    "| :--- | :--- | :--- | :--- |\n"
+                    "| **Molecular Genetics** | Central Dogma (DNA -> RNA -> Protein) | Genetic Code Triplets (Codons) | High-fidelity polypeptide translation |\n"
+                    "| **Cellular Bioenergetics** | ATP Synthase & Electron Transport Chain | Gibbs Free Energy of ATP Hydrolysis | 36-38 ATP per oxidized glucose molecule |\n"
+                    "| **Photosynthetic Synthesis**| Light Reactions & Calvin-Benson Cycle | $6\\text{CO}_2 + 6\\text{H}_2\\text{O} \\to \\text{C}_6\\text{H}_{12}\\text{O}_6 + 6\\text{O}_2$ | Photochemical energy stored in carbohydrates |\n"
+                    "| **Organismal Homeostasis** | Negative feedback endocrine & neural loops | Physiological setpoints (pH, temperature) | Bounded metabolic internal stability |\n"
+                    "| **Population Evolution** | Natural selection & allele frequency drift | Hardy-Weinberg Equilibrium ($p^2 + 2pq + q^2 = 1$) | Phenotypic adaptation to ecological niches |\n\n"
+                    "### 3. Biological Information Flow Pipeline\n"
+                    "`DNA Replication -> RNA Polymerase Transcription -> Ribosomal Translation -> Protein Chaperone Folding -> Functional Phenotypic Trait`\n\n"
+                    "**Execution Summary**: Cellular compartmentalization, Central Dogma genetic replication, and ATP-driven metabolic homeostasis."
+                )
+
+        # Mathematics / Calculus / Linear Algebra / Discrete Math / Statistics
+        if any(k in p for k in ["mathematics", "maths", "calculus", "linear algebra", "discrete math", "probability", "statistics", "geometry", "algebra"]) and not intent["has_code"]:
+            title = intent["clean_topic"].title()
+            if not is_compressed:
+                return (
+                    f"Hello! Here is an in-depth, structured scientific overview of **{title}**, including its foundational definition, structural branches, and applications:\n\n"
+                    f"### 1. Definition of {title}:\n"
+                    f"**{title}** is the universal formal science that explores the abstract logic of quantity, structure, space, patterns, continuous change, and deductive reasoning. "
+                    "Unlike empirical sciences that rely on laboratory observation, mathematics establishes absolute truth through rigorous axiomatic proofs derived from first principles.\n\n"
+                    "### 2. Fundamental Structural Pillars:\n"
+                    "- **Algebra & Number Theory**: Formalizes operations, symbolic structures, polynomials, group theory, and the arithmetic properties of prime numbers.\n"
+                    "- **Calculus & Mathematical Analysis**: Studies limits, continuous functions, derivatives (rates of change), and integrals (accumulation of quantities).\n"
+                    "- **Linear Algebra & Vector Spaces**: Investigates matrices, determinants, eigenvalues, eigenvectors, and high-dimensional vector spaces that power modern AI and physics.\n"
+                    "- **Discrete Mathematics & Graph Theory**: Focuses on countable structures, combinatorics, graph algorithms, and formal logic foundational to computer science.\n"
+                    "- **Probability & Statistics**: Quantifies uncertainty, random variables, stochastic processes, Bayesian inference, and distribution models.\n\n"
+                    "### 3. Key Advantages & Practical Applications:\n"
+                    "- **Universal Language of Science**: Underpins physics, chemistry, engineering, cryptography (RSA, ECC), artificial intelligence, and quantitative finance.\n"
+                    "- **Absolute Logical Certainty**: Mathematical theorems, once formally proven from axioms, remain permanently true across all coordinate systems.\n"
+                    "- **Computational Modeling**: Enables optimization algorithms, computer graphics transformations, and predictive fluid simulations.\n\n"
+                    "### 4. Theoretical Limitations & Frontiers:\n"
+                    "- **Gödel's Incompleteness Theorems**: Any consistent formal axiomatic system capable of arithmetic contains true statements that cannot be proven within the system itself.\n"
+                    "- **Computational Intractability**: The unresolved P vs NP problem and the exponential complexity of NP-hard optimization challenges.\n\n"
+                    "### 5. Architecture of Mathematical Reasoning:\n"
+                    "```\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  APPLIED SCIENCES & COMPUTATION                |\n"
+                    "|       (Machine Learning, Quantum Physics, Cryptography, Finance)|\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  ADVANCED THEORETICAL FRAMEWORKS               |\n"
+                    "|      (Calculus, Linear Algebra, Topology, Group Theory)        |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  ABSTRACT LOGIC & AXIOMATIC FOUNDATIONS        |\n"
+                    "|         (Zermelo-Fraenkel Set Theory, Propositional Logic)     |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "```\n\n"
+                    f"I hope this comprehensive overview clarifies the foundations and scope of {title}! Let me know if you would like to explore specific theorems or proofs."
+                )
+            else:
+                return (
+                    f"**{title}: Formal Technical Specifications & Axiomatic Matrix**\n\n"
+                    "### 1. Formal Technical Definition\n"
+                    f"{title} is the formal science formalizing abstract relations, quantitative structures, continuous calculus mappings, and deductive logical inferences derived from foundational axiomatic set theory.\n\n"
+                    "### 2. Mathematical Architecture & Discipline Specification Matrix\n"
+                    "| Mathematical Branch | Core Formal Primitive | Governing Invariant / Theorem | Applied Computing Domain |\n"
+                    "| :--- | :--- | :--- | :--- |\n"
+                    "| **Linear Algebra** | Vector spaces, matrices & eigenvalues | $\\mathbf{A}\\vec{v} = \\lambda\\vec{v}$ | Deep learning tensors & computer graphics |\n"
+                    "| **Differential Calculus** | Continuous limits & derivatives | Fundamental Theorem of Calculus ($\\int_a^b f'(x)dx = f(b)-f(a)$) | Physics dynamics & gradient descent optimization |\n"
+                    "| **Discrete Mathematics** | Graphs, trees & Boolean propositional logic | Euler's Formula ($V - E + F = 2$) | Compiler design & distributed network routing |\n"
+                    "| **Probability & Stats** | Random variables & probability density functions | Central Limit Theorem & Bayes' Rule | Statistical inference & machine learning models |\n"
+                    "| **Number Theory** | Modular arithmetic & prime factorization | Fundamental Theorem of Arithmetic | Public-key cryptography (RSA, Diffie-Hellman) |\n\n"
+                    "### 3. Deductive Derivation Pipeline\n"
+                    "`Axiomatic Set Theory -> Formal Definitions -> Lemma Derivation -> Deductive Proof Verification -> Generalized Theorem Formulation`\n\n"
+                    "**Execution Summary**: Rigorous axiomatic deduction, linear algebraic mapping, and deterministic invariant verification."
+                )
+
+        # Computer Architecture / CPU / GPU / Microprocessor / Hardware
+        if any(k in p for k in ["computer architecture", "cpu", "gpu", "microprocessor", "von neumann", "instruction set", "alu", "cache memory"]) and not intent["has_code"]:
+            title = "Computer Architecture"
+            if not is_compressed:
+                return (
+                    "Hello! Here is an in-depth, structured engineering overview of **Computer Architecture**, including its definition, hardware subsystems, instruction pipeline, and bottlenecks:\n\n"
+                    "### 1. Definition of Computer Architecture:\n"
+                    "**Computer Architecture** is the conceptual design and fundamental operational structure of a computing system. "
+                    "It defines how silicon hardware components—specifically the Central Processing Unit (CPU), memory hierarchy, registers, and interconnect buses—are coordinated to execute machine instructions.\n\n"
+                    "### 2. Core Subsystems & Structural Hierarchy:\n"
+                    "- **Central Processing Unit (CPU)**:\n"
+                    "  * *Arithmetic Logic Unit (ALU)*: Executes integer calculations and bitwise Boolean logic.\n"
+                    "  * *Control Unit (CU)*: Decodes instructions from memory and coordinates execution signals across registers.\n"
+                    "  * *Registers*: Ultra-fast, single-cycle storage cells (e.g. Program Counter, Instruction Register, Accumulator).\n"
+                    "- **Memory Hierarchy**:\n"
+                    "  * *L1 / L2 / L3 SRAM Caches*: High-speed on-die silicon caches minimizing latency down to 1-10 CPU cycles.\n"
+                    "  * *Main Memory (DRAM)*: High-capacity working storage with typical access latency of 50-100 ns.\n"
+                    "  * *Secondary Storage (NVMe SSD / HDD)*: Non-volatile persistent block storage.\n"
+                    "- **Instruction Pipeline Architecture**: Divides execution into five overlapping stages: **Fetch -> Decode -> Execute -> Memory Access -> Write-Back (F-D-E-M-W)**.\n\n"
+                    "### 3. Key Advantages & Technological Innovations:\n"
+                    "- **Superscalar & Out-of-Order Execution**: Executes multiple instructions per clock cycle (IPC) by dynamically resolving data hazards.\n"
+                    "- **SIMD & GPU Parallelism**: Single Instruction, Multiple Data architectures accelerate matrix math for 3D graphics and deep learning.\n"
+                    "- **Branch Prediction**: Speculative branch prediction engines prevent pipeline stalls using historical pattern branch tables.\n\n"
+                    "### 4. Engineering Bottlenecks & Physical Limits:\n"
+                    "- **The Memory Wall**: Processor execution speeds have outpaced DRAM bus access latency, causing CPU cycles to stall waiting for memory.\n"
+                    "- **Thermal Design Power (TDP) & Dennard Scaling**: Physical transistor leakage creates heat dissipation barriers that limit single-core clock frequencies (the 'Power Wall').\n\n"
+                    "### 5. Architecture Diagram of the von Neumann Machine:\n"
+                    "```\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                     CENTRAL PROCESSING UNIT (CPU)              |\n"
+                    "|  +--------------------+  +------------------+  +-------------+ |\n"
+                    "|  | Control Unit (CU)  |  | ALU / FPU Core   |  |  Registers  | |\n"
+                    "|  +--------------------+  +------------------+  +-------------+ |\n"
+                    "|  +-----------------------------------------------------------+ |\n"
+
+                    "|  |           L1 / L2 / L3 High-Speed SRAM Cache Hierarchy    | |\n"
+                    "|  +-----------------------------------------------------------+ |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               | System Bus (Address, Data, Control)\n"
+                    "                               v\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                     MAIN MEMORY (DRAM RAM)                     |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               | PCIe / NVMe Storage Bus\n"
+                    "                               v\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                     NON-VOLATILE STORAGE & I/O                 |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "```\n\n"
+                    "I hope this breakdown clarifies computer architecture principles! Feel free to ask if you would like to explore RISC vs CISC or instruction pipelining."
+                )
+            else:
+                return (
+                    "**Computer Architecture: Formal Hardware Specifications & Microarchitecture Matrix**\n\n"
+                    "### 1. Formal Technical Definition\n"
+                    "Computer Architecture formalizes the instruction set architecture (ISA) contract, pipelined microarchitecture, register transfer logic (RTL), and hierarchical memory caching that together translate binary opcodes into deterministic silicon state transitions.\n\n"
+                    "### 2. Hardware Subsystem & Microarchitecture Specification Matrix\n"
+                    "| Hardware Subsystem | Primary Silicon Mechanism | Performance Metric | Primary Physical Bottleneck |\n"
+                    "| :--- | :--- | :--- | :--- |\n"
+                    "| **CPU Pipeline** | 5-stage classic pipeline (Fetch, Decode, Execute, Mem, WB) | Instructions Per Cycle (IPC) | Branch misprediction penalty & pipeline flushes |\n"
+                    "| **ALU / FPU Core** | Carry-lookahead adders & IEEE 754 floating-point units | GFLOPS throughput | Critical path propagation delay |\n"
+                    "| **Cache Hierarchy** | L1/L2/L3 multi-level SRAM with MESI coherency protocol | Cache Hit Rate (>95%) | High silicon die area & static power leakage |\n"
+                    "| **System Bus & DRAM** | DDR5 dual-channel memory interface & memory controllers | Memory Bandwidth (GB/s) | Von Neumann Memory Wall (50-100ns access latency) |\n"
+                    "| **Instruction Control** | Out-of-Order execution & dynamic branch predictors | Speculative accuracy (>98%) | Instruction window reorder buffer capacity |\n\n"
+                    "### 3. Microarchitectural Execution Pipeline\n"
+                    "`Instruction Fetch (PC) -> Instruction Decode (Opcode) -> ALU Execution -> Memory Cache Access -> Register Write-Back`\n\n"
+                    "**Execution Summary**: Pipelined instruction scheduling, multi-level SRAM cache hierarchy, and hardware branch prediction bounding latency."
+                )
+
+        # Web Development / Frontend / Backend / Full Stack / APIs
+        if any(k in p for k in ["web development", "web dev", "frontend", "backend", "full stack", "react", "html", "css", "javascript", "rest api", "graphql"]) and not intent["has_code"]:
+            title = "Web Development"
+            if not is_compressed:
+                return (
+                    "Hello! Here is an in-depth, structured engineering overview of **Web Development**, including its architectural tiers, protocols, advantages, and security considerations:\n\n"
+                    "### 1. Definition of Web Development:\n"
+                    "**Web Development** is the engineering discipline that encompasses building, deploying, and maintaining interactive, networked software applications accessible via standard Internet protocols (HTTP/HTTPS, WebSockets) through client web browsers.\n\n"
+                    "### 2. Core Architectural Tiers & Modern Stack:\n"
+                    "- **Client-Side Frontend**: Renders user interfaces and handles client reactivity using HTML5, CSS3, JavaScript (TypeScript), and reactive UI frameworks like React, Vue, or Angular. Manages the Virtual DOM and state reconciliation.\n"
+                    "- **API & Transport Layer**: Exposes communication interfaces using RESTful HTTP methods (GET, POST, PUT, DELETE), GraphQL queries, or bi-directional WebSockets for real-time data streaming.\n"
+                    "- **Server-Side Backend**: Executes business logic, authentication (JWT, OAuth 2.0), background task queues, and data validation using runtimes like Node.js, Python (FastAPI/Django), Go, or Java.\n"
+                    "- **Persistence & Data Layer**: Reliably stores structured and unstructured state across relational databases (PostgreSQL, MySQL), document stores (MongoDB), and in-memory caches (Redis).\n\n"
+                    "### 3. Key Advantages & Industry Strengths:\n"
+                    "- **Universal Zero-Install Accessibility**: Applications run immediately in any standard web browser across desktops, tablets, and smartphones without native installations.\n"
+                    "- **Rapid Continuous Deployment (CI/CD)**: Code updates can be shipped instantly to global CDNs (Content Delivery Networks) without requiring user app-store downloads.\n"
+                    "- **Component-Driven Reusability**: Modular design systems promote rapid development and clean separation of concerns.\n\n"
+                    "### 4. Disadvantages & Architectural Challenges:\n"
+                    "- **Browser Fragmentation & Compatibility**: Handling differing browser rendering engines, CSS quirks, and mobile screen viewports.\n"
+                    "- **Client-Side Security Vulnerabilities**: Defending against Cross-Site Scripting (XSS), Cross-Site Request Forgery (CSRF), and insecure third-party dependencies.\n\n"
+                    "### 5. Architectural Flow Diagram of a Modern Web App:\n"
+                    "```\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  CLIENT BROWSER (FRONTEND TIER)                |\n"
+                    "|       (HTML5, CSS3, React / TypeScript, Virtual DOM, SPA)      |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               | HTTPS / TLS 1.3 / REST / GraphQL\n"
+                    "                               v\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  GATEWAY & LOAD BALANCER TIER                  |\n"
+                    "|       (Reverse Proxy: NGINX, Cloudflare CDN, Rate Limiting)    |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               | Internal Microservice Bus\n"
+                    "                               v\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  APPLICATION BACKEND (SERVER TIER)             |\n"
+                    "|       (Node.js / Python / Go, Business Logic, Auth JWT)        |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               | Connection Pool / Queries\n"
+                    "                               v\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  DATA PERSISTENCE & CACHE TIER                 |\n"
+                    "|       (PostgreSQL, Redis Cache, S3 Object Storage)             |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "```\n\n"
+                    "I hope this architecture guide provides a solid blueprint of modern web development! Let me know if you would like sample frontend or backend implementations."
+                )
+            else:
+                return (
+                    "**Web Development: Formal Systems Architecture & Protocol Matrix**\n\n"
+                    "### 1. Formal Technical Definition\n"
+                    "Web Development formalizes the distributed multi-tier engineering of client-side DOM rendering, stateless HTTP/HTTPS application programming interfaces (APIs), and persistent transactional database backends.\n\n"
+                    "### 2. Full-Stack Web Architecture Specification Matrix\n"
+                    "| Architectural Tier | Core Technology Stack | Primary Operational Mechanism | Security & Performance Standard |\n"
+                    "| :--- | :--- | :--- | :--- |\n"
+                    "| **Client Frontend** | React / TypeScript / HTML5 / CSS3 | Virtual DOM reconciliation & client hydration | Sub-second First Contentful Paint (FCP) |\n"
+                    "| **Network Transport** | HTTP/2, HTTP/3, TLS 1.3, WebSockets | Multiplexed packet streams & SSL handshakes | End-to-end TLS encryption & zero plaintext |\n"
+                    "| **Application Backend** | FastAPI / Node.js / Go / Django | Stateless business logic & token verification | Horizontal autoscaling with <50ms P99 latency |\n"
+                    "| **Persistence Layer** | PostgreSQL / MySQL / MongoDB | ACID transactions & B-tree indexed queries | Connection pooling with automated failover |\n"
+                    "| **Distributed Cache** | Redis / Memcached in-memory store | Key-value caching & rate-limit token buckets | Sub-millisecond read latency |\n\n"
+                    "### 3. Request-Response Pipeline\n"
+                    "`User Event -> Client State Update -> HTTPS API Request -> Reverse Proxy Routing -> Server Logic -> Database Query -> JSON Response -> DOM Re-render`\n\n"
+                    "**Execution Summary**: Decoupled multi-tier web architecture with reactive client hydration, stateless API routing, and ACID data persistence."
+                )
+
+        # Blockchain / Bitcoin / Ethereum / Smart Contracts / Cryptocurrency
+        if any(k in p for k in ["blockchain", "bitcoin", "ethereum", "smart contract", "cryptocurrency", "web3", "distributed ledger"]):
+            title = "Blockchain & Distributed Ledgers"
+            if not is_compressed:
+                return (
+                    "Hello! Here is an in-depth, structured architectural overview of **Blockchain & Distributed Ledgers**, including its definition, consensus primitives, advantages, and tradeoffs:\n\n"
+                    "### 1. Definition of Blockchain:\n"
+                    "A **Blockchain** is a decentralized, cryptographically secured distributed ledger that maintains an immutable, append-only chronological record of transactions shared across a peer-to-peer (P2P) network without reliance on a central authority.\n\n"
+                    "### 2. Core Pillars & Cryptographic Primitives:\n"
+                    "- **Cryptographic Hashing**: Every block contains a cryptographic hash (e.g. SHA-256 or Keccak-256) of the preceding block header, creating a tamper-evident linked chain.\n"
+                    "- **Merkle Tree Data Structure**: Efficiently summarizes and verifies large sets of transactions in O(log N) verification time.\n"
+                    "- **Asymmetric Public-Key Cryptography**: Digital signatures (ECDSA secp256k1 or Ed25519) verify transaction authenticity and account ownership without disclosing private keys.\n"
+                    "- **Consensus Mechanisms**:\n"
+                    "  * *Proof of Work (PoW)*: Computational hash puzzles (mining) secure the network against Sybil attacks by requiring thermodynamic energy expenditure.\n"
+                    "  * *Proof of Stake (PoS)*: Validators stake economic capital (tokens) to propose and validate new blocks, achieving energy efficiency.\n"
+                    "- **Smart Contracts**: Deterministic, self-executing programs compiled to virtual machines (e.g., Ethereum Virtual Machine - EVM) that run code exactly as written.\n\n"
+                    "### 3. Key Advantages & Industry Strengths:\n"
+                    "- **Decentralized Trust & Censorship Resistance**: Eliminates single points of failure and intermediary rent-seeking in financial settlement.\n"
+                    "- **Cryptographic Immutability**: Historical transactions cannot be altered or retroactively erased without rewriting all subsequent blocks.\n"
+                    "- **Automated Programmable Execution**: Smart contracts automate escrow, tokenization, decentralized finance (DeFi), and transparent supply chains.\n\n"
+                    "### 4. Disadvantages & The Blockchain Trilemma:\n"
+                    "- **The Scalability Trilemma**: Tradeoff between achieving **Decentralization**, **Security**, and **High Transaction Throughput (TPS)**.\n"
+                    "- **Smart Contract Vulnerability Risks**: Code is law; immutable bugs or reentrancy exploits cannot be reversed once executed on-chain.\n\n"
+                    "### 5. Architectural Diagram of a Blockchain Network:\n"
+                    "```\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  APPLICATION & SMART CONTRACT TIER             |\n"
+                    "|         (EVM Bytecode, Decentralized Apps, Wallets, DeFi)      |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  CONSENSUS & INCENTIVE LAYER                   |\n"
+                    "|         (Proof of Stake / Proof of Work, Validator Slashing)   |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  DATA & CRYPTOGRAPHIC LEDGER LAYER             |\n"
+                    "|        (Merkle Tree Root, SHA-256 Block Chaining, Signatures)  |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  PEER-TO-PEER NETWORK LAYER                    |\n"
+                    "|         (Gossip Protocol, Mempool, Node Discovery)             |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "```\n\n"
+                    "I hope this architectural overview clarifies blockchain systems! Feel free to ask if you would like to explore smart contract security or consensus algorithms."
+                )
+            else:
+                return (
+                    "**Blockchain: Formal Cryptographic Ledger Specifications & Consensus Matrix**\n\n"
+                    "### 1. Formal Technical Definition\n"
+                    "A Blockchain is a Byzantine Fault Tolerant (BFT) append-only distributed state machine formalizing immutable transaction records via cryptographic hash pointers, asymmetric digital signatures, and decentralized consensus.\n\n"
+                    "### 2. Distributed Ledger Primitive Specification Matrix\n"
+                    "| Architectural Primitive | Cryptographic Mechanism | Mathematical Formulation | Security Guarantee |\n"
+                    "| :--- | :--- | :--- | :--- |\n"
+                    "| **Block Header Chaining**| Cryptographic Hash Linking | $H_{i} = \\text{SHA256}(\\text{BlockHeader}_i)$ | Strict tamper-evident historical immutability |\n"
+                    "| **Transaction Tree** | Binary Merkle Tree | Root $R = H(H(T_1) \\parallel H(T_2))$ | O(log N) lightweight cryptographic proof of inclusion |\n"
+                    "| **Account Ownership** | ECDSA (secp256k1 curve) | Signature $(r, s)$ verified via public key $K$ | Non-repudiation & zero private key disclosure |\n"
+                    "| **Consensus Protocol** | Proof of Stake (PoS) / PoW | Byzantine Fault Tolerance ($> 66\\%$ honest stake) | Provable finality under asynchronous network partitions |\n"
+                    "| **Deterministic Logic**| Virtual Machine (EVM) | Turing-complete bytecode state execution | Deterministic global state transition matrix |\n\n"
+                    "### 3. Transaction Execution Pipeline\n"
+                    "`Transaction Broadcast -> P2P Gossip Diffusion -> Mempool Validation -> Block Proposal -> Consensus Attestation -> Chain Commitment`\n\n"
+                    "**Execution Summary**: Byzantine fault-tolerant state machine replication, Merkle tree cryptographic verification, and deterministic smart contract execution."
+                )
+
+        # Quantum Computing / Qubits / Superposition / Entanglement
+        if any(k in p for k in ["quantum computing", "quantum computer", "qubit", "superposition", "entanglement", "quantum supremacy"]):
+            title = "Quantum Computing"
+            if not is_compressed:
+                return (
+                    "Hello! Here is an in-depth, structured scientific overview of **Quantum Computing**, including its definition, quantum mechanical principles, advantages, and hardware limitations:\n\n"
+                    "### 1. Definition of Quantum Computing:\n"
+                    "**Quantum Computing** is an advanced computational paradigm that harnesses the fundamental principles of quantum mechanics—such as superposition, quantum entanglement, and quantum interference—to perform complex calculations exponentially faster than classical computers for specific problem classes.\n\n"
+                    "### 2. Core Pillars & Quantum Mechanical Primitives:\n"
+                    "- **Quantum Bits (Qubits)**: Unlike classical bits that exist strictly in state 0 or 1, a qubit exists as a complex linear combination of basis states:\n"
+                    "  $|\\psi\\rangle = \\alpha|0\\rangle + \\beta|1\\rangle$, where $|\\alpha|^2 + |\\beta|^2 = 1$.\n"
+                    "- **Superposition**: Allows an $N$-qubit register to simultaneously represent $2^N$ states in Hilbert space, enabling massive parallel evaluation.\n"
+                    "- **Quantum Entanglement**: A phenomenon where multiple qubits become intrinsically correlated such that the quantum state of one cannot be described independently of the others, regardless of distance.\n"
+                    "- **Quantum Interference**: Quantum algorithms manipulate probability amplitudes so that constructive interference amplifies correct solutions while destructive interference cancels out incorrect answers.\n"
+                    "- **Key Quantum Algorithms**:\n"
+                    "  * *Shor's Algorithm*: Factors large composite integers in polynomial time $O((\\log N)^3)$, threatening classical RSA cryptography.\n"
+                    "  * *Grover's Algorithm*: Provides a quadratic speedup $O(\\sqrt{N})$ for unstructured database search.\n\n"
+                    "### 3. Key Advantages & Computational Impact:\n"
+                    "- **Exponential Speedup in Complex Domains**: Revolutionizes quantum chemistry modeling, molecular drug discovery, and materials science simulation.\n"
+                    "- **Optimization & Cryptanalysis**: Solves complex combinatorial optimization problems in logistics, finance, and cryptography.\n\n"
+                    "### 4. Disadvantages & Physical Hardware Challenges:\n"
+                    "- **Quantum Decoherence & Thermal Noise**: Environmental thermal fluctuations easily collapse fragile quantum states, requiring cryogenic dilution refrigerators operating at ~15 milliKelvin.\n"
+                    "- **Quantum Error Correction Overhead**: Realizing one fault-tolerant logical qubit currently requires hundreds to thousands of physical qubits.\n\n"
+                    "### 5. Architectural Diagram of a Quantum Computing Stack:\n"
+                    "```\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  QUANTUM ALGORITHM & SOFTWARE LAYER            |\n"
+                    "|        (Qiskit, Cirq, Shor's & Grover's Algorithms, QAOA)      |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  QUANTUM COMPILER & LOGICAL GATES              |\n"
+                    "|         (Hadamard, CNOT, Pauli-X/Y/Z, Phase Gates)             |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  QUANTUM ERROR CORRECTION (QEC)                |\n"
+                    "|         (Surface Codes, Syndrome Extraction, Fault Tolerance)  |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "                               ^\n"
+                    "                               |\n"
+                    "+----------------------------------------------------------------+\n"
+                    "|                  PHYSICAL SILICON / CRYOGENIC HARDWARE         |\n"
+                    "|         (Superconducting Transmon Qubits / Trapped Ions, 15 mK)|\n"
+                    "+----------------------------------------------------------------+\n"
+                    "```\n\n"
+                    "I hope this overview illuminates the principles of quantum computing! Feel free to ask if you would like to explore quantum gates or algorithms."
+                )
+            else:
+                return (
+                    "**Quantum Computing: Formal Technical Specifications & Quantum State Matrix**\n\n"
+                    "### 1. Formal Technical Definition\n"
+                    "Quantum Computing formalizes information processing within complex Hilbert space $\\mathcal{H}^{2^n}$ utilizing unitary quantum gate transformations ($U U^\\dagger = I$), quantum state superposition, and non-local entanglement to achieve sub-exponential computational complexity.\n\n"
+                    "### 2. Quantum Architecture & State Matrix\n"
+                    "| Quantum Layer / Primitive | Mathematical Formulation | Primary Mechanism | Physical / Algorithmic Constraint |\n"
+                    "| :--- | :--- | :--- | :--- |\n"
+                    "| **Qubit State** | $|\\psi\\rangle = \\alpha|0\\rangle + \\beta|1\\rangle$ | Coherent two-level quantum system | Bounded $T_1$ relaxation & $T_2$ dephasing times |\n"
+                    "| **Entanglement Gate** | $\\text{CNOT} = |0\\rangle\\langle0| \\otimes I + |1\\rangle\\langle1| \\otimes X$ | Creates maximal Bell state $|\\Phi^+\\rangle$ | Multi-qubit gate fidelity ($>99.5\\%$ required) |\n"
+                    "| **Superposition Gate** | $H = \\frac{1}{\\sqrt{2}}\\begin{pmatrix} 1 & 1 \\\\ 1 & -1 \\end{pmatrix}$ | Equal probability basis projection | Phase stability under RF microwave control pulses |\n"
+                    "| **Quantum Factorization** | Shor's Algorithm: $O((\\log N)^3)$ | Quantum Fourier Transform (QFT) | Circuit depth bounded by physical qubit error rates |\n"
+                    "| **Decoherence Mitigation**| Surface Code QEC ($d \\times d$ lattice) | Syndrome measurement & topological recovery | Requires $\\sim 1000$ physical qubits per logical qubit |\n\n"
+                    "### 3. Quantum Execution Pipeline\n"
+                    "`State Initialization |0>^n -> Superposition (H Gates) -> Entangling Unitary Gates -> Quantum Interference -> Projective Measurement Collapse`\n\n"
+                    "**Execution Summary**: Unitary transformations across $2^n$-dimensional Hilbert space with surface-code quantum error correction."
+                )
+
         # Data Science / CSV Datasets / Analytics Dashboards
         if any(k in p for k in ["data science", "datascience", "csv", "dashboard", "datasets", "analytics", "visualization", "pandas"]):
             if not is_compressed:
@@ -982,38 +1568,73 @@ class DeterministicFrontierEngine:
                 )
 
         # =========================================================================
-        # 4. GENERAL ANALYTICAL SYNTHESIZER (ANY OTHER TOPIC)
+        # 4. TOPIC-AWARE DYNAMIC KNOWLEDGE SYNTHESIZER (FOR ANY CUSTOM / OPEN TOPIC)
         # =========================================================================
         topic = intent["clean_topic"].title()
+
         if not is_compressed:
+            # Output A: Comprehensive Conversational Tutorial View
             return (
-                f"Hello! Here is a detailed overview and analysis of **{topic}**:\n\n"
-                f"### 1. Conceptual Introduction & Definition:\n"
-                f"{topic} represents an essential domain concept within modern technical systems. "
-                f"It formalizes key functional requirements and establishes structural standards to ensure "
-                f"predictable execution, fault tolerance, and conceptual clarity.\n\n"
-                f"### 2. Mechanics & Operational Principles:\n"
-                f"- **Algorithmic Correctness**: Guarantees that inputs map deterministically to expected outputs without state leakage.\n"
-                f"- **Structural Decomposition**: Separates core logic from external dependencies to maximize modularity and maintainability.\n"
-                f"- **Resource Efficiency**: Optimizes time-latency and memory footprints across the execution lifecycle.\n\n"
-                f"### 3. Practical Applications & Real-World Best Practices:\n"
-                f"When implementing {topic} in production environments, teams prioritize end-to-end telemetry monitoring, "
-                f"automated unit and integration testing, and defensive input validation to eliminate unexpected failure modes.\n\n"
-                f"I hope this comprehensive overview clarifies the essential concepts of {topic}! Feel free to ask if you would like to explore specific implementations or best practices."
+                f"Hello! Here is an in-depth, structured scientific and practical analysis of **{topic}**:\n\n"
+                f"### 1. Conceptual Foundations & Definition of {topic}:\n"
+                f"At its core, **{topic}** represents an essential domain of study and operational practice. "
+                f"It formalizes fundamental principles, establishes structured taxonomies, and governs systematic interactions "
+                f"to enable predictive understanding, consistent outcomes, and domain clarity.\n\n"
+                f"### 2. Core Structure & Fundamental Dimensions of {topic}:\n"
+                f"- **Foundational Principles**: Governs the baseline theories, axioms, and empirical laws that define {topic}.\n"
+                f"- **Structural Taxonomy**: Organizes the core components, subfields, and functional boundaries of the discipline.\n"
+                f"- **Methodological Execution**: Details the systematic analytical frameworks and procedural workflows utilized within {topic}.\n\n"
+                f"### 3. Key Advantages & Practical Value:\n"
+                f"- **Systematic Clarity**: Provides a structured analytical framework to solve complex real-world challenges in {topic}.\n"
+                f"- **Reliable & Repeatable Outcomes**: Minimizes ambiguity and establishes standardized benchmarks for rigorous evaluation.\n"
+                f"- **Scalable Domain Impact**: Enables interdisciplinary collaboration, technological innovation, and continuous advancements.\n\n"
+                f"### 4. Critical Challenges, Limitations & Tradeoffs:\n"
+                f"- **Boundary Conditions & Complexity**: Scaling {topic} across diverse or dynamic environments introduces edge-case constraints.\n"
+                f"- **Resource & Implementation Overhead**: Advanced applications require dedicated domain expertise and rigorous empirical validation.\n\n"
+                f"### 5. Conceptual Architecture of {topic}:\n"
+                f"```\n"
+                f"+----------------------------------------------------------------+\n"
+                f"|                  PRACTICAL APPLICATIONS & IMPACT               |\n"
+                f"|         (Real-World Implementation, Applied Solutions)         |\n"
+                f"+----------------------------------------------------------------+\n"
+                f"                               ^\n"
+                f"                               |\n"
+                f"+----------------------------------------------------------------+\n"
+                f"|                  METHODOLOGICAL FRAMEWORK & EXECUTION          |\n"
+                f"|         (Systematic Workflows, Standards, Analysis)            |\n"
+                f"+----------------------------------------------------------------+\n"
+                f"                               ^\n"
+                f"                               |\n"
+                f"+----------------------------------------------------------------+\n"
+                f"|                  STRUCTURAL TAXONOMY & DIMENSIONS              |\n"
+                f"|         (Core Components, Modular Subfields, Boundaries)       |\n"
+                f"+----------------------------------------------------------------+\n"
+                f"                               ^\n"
+                f"                               |\n"
+                f"+----------------------------------------------------------------+\n"
+                f"|                  FOUNDATIONAL PRINCIPLES & THEORY              |\n"
+                f"|         (Baseline Axioms, Empirical Laws, Domain Concepts)     |\n"
+                f"+----------------------------------------------------------------+\n"
+                f"```\n\n"
+                f"I hope this comprehensive overview clarifies the foundational and advanced aspects of **{topic}**! "
+                f"Feel free to ask if you would like to explore specific subfields, practical case studies, or advanced principles."
             )
         else:
+            # Output B: High-Density Technical Specifications View
             return (
-                f"**Technical Specification & Architecture Reference: {topic}**\n\n"
+                f"**{topic}: Formal Technical Specifications & Domain Architecture Matrix**\n\n"
                 f"### 1. Formal Technical Definition\n"
-                f"{topic} represents an essential domain concept within modern technical systems, formalizing functional requirements and establishing structural execution standards.\n\n"
-                f"### 2. System Architecture & Quality Matrix\n"
-                f"| Domain Dimension | Technical Mechanism | Verification Standard | Operational Bound |\n"
+                f"{topic} formalizes systematic domain principles, structural taxonomy, operational methodology, and bounded verification standards to achieve reliable, predictable outcomes.\n\n"
+                f"### 2. Domain Architecture & Quality Matrix\n"
+                f"| Domain Dimension | Core Theoretical Primitive | Operational Mechanism | Verification & Impact Standard |\n"
                 f"| :--- | :--- | :--- | :--- |\n"
-                f"| **Algorithmic Correctness** | Deterministic input-to-output mapping | Automated unit & regression test suites | Zero state leakage |\n"
-                f"| **Structural Modularity** | Separation of concerns & dependency isolation | Interface contract & decoupling metrics | High maintainability |\n"
-                f"| **Resource Efficiency** | Profiling & footprint minimization | Benchmarked time latency & memory usage | Bounded execution |\n"
-                f"| **Production Telemetry** | End-to-end metrics & tracing | Defensive input validation & health probes | 99.9% fault tolerance |\n\n"
-                f"**Execution Summary**: Formalized operational semantics with automated telemetry, modular isolation, and bounded resource utilization."
+                f"| **Foundational Principles** | Theoretical axioms & baseline concepts | Systematic empirical observation & derivation | Repeatable causal validity |\n"
+                f"| **Structural Taxonomy** | Modular classification of subdomains | Hierarchical decomposition of subfields | Comprehensive scope coverage |\n"
+                f"| **Analytical Methodology** | Quantitative & qualitative frameworks | Controlled evaluation & experimental testing | Bounded margin of error |\n"
+                f"| **Practical Implementation**| Real-world translation & execution | Strategic design & technological integration | High societal & domain utility |\n\n"
+                f"### 3. Structural Execution Pipeline\n"
+                f"`Foundational Theory -> Structural Taxonomy -> Analytical Methodology -> Practical Implementation -> Quality Attestation`\n\n"
+                f"**Execution Summary**: Rigorous domain analysis of {topic} with systematic taxonomy, empirical verification, and structured operational bounds."
             )
 
 
