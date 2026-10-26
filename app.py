@@ -7,6 +7,8 @@ Provides real-time interactive testing for all 9 architectural modules.
 import sys
 import os
 import streamlit as st
+import html
+import pandas as pd
 
 # Ensure project root is on sys.path
 project_root = os.path.abspath(os.path.dirname(__file__))
@@ -109,6 +111,10 @@ if selected_preset != "Custom Input":
             default_text = p["text"]
             break
 
+if "input_payload_override" in st.session_state and st.session_state["input_payload_override"]:
+    default_text = st.session_state["input_payload_override"]
+    del st.session_state["input_payload_override"]
+
 # Input Section
 st.subheader("1. Input Prompt Payload")
 user_input = st.text_area(
@@ -183,35 +189,186 @@ if run_button or user_input:
             st.dataframe(opt["model_comparison_table"])
 
     with tab_tokens:
-        st.markdown("### Module 1: Subword Tokenization & Vocabulary Delta")
-        subw = result.subword_comparison["encodings"]
-        col_tok1, col_tok2 = st.columns(2)
-        with col_tok1:
-            st.write("**cl100k_base (GPT-4/3.5)**")
-            st.write(f"• Token count: `{subw['cl100k_base']['token_count']}` tokens")
-            st.write(f"• Ratio: `{subw['cl100k_base']['char_to_token_ratio']} chars/token`")
-        with col_tok2:
-            st.write("**o200k_base (GPT-4o/Omni)**")
-            st.write(f"• Token count: `{subw['o200k_base']['token_count']}` tokens")
-            st.write(f"• Ratio: `{subw['o200k_base']['char_to_token_ratio']} chars/token`")
+        st.markdown("### Module 1: Subword Tokenization & Vocabulary Delta (BPE)")
+        st.caption("Live Byte-Pair Encoding (BPE) inspection comparing OpenAI's **cl100k_base** (GPT-4/3.5) with **o200k_base** (GPT-4o/Omni).")
 
+        st.info(
+            "💡 **Empirical Proof: Real Byte-Pair Encoding via OpenAI `tiktoken`**\n\n"
+            "**Why are token counts often identical for English?**\n"
+            "Both `cl100k_base` (100,277 vocabulary) and `o200k_base` (200,019 vocabulary) already store standard English words (e.g. `'what'`, `' is'`, `' chemistry'`, `'?'`) as single tokens. "
+            "OpenAI expanded `o200k_base` specifically to fix **multilingual token inflation** (e.g. Hindi, Arabic, Chinese) and code syntax. "
+            "Notice below that while token counts match for short English, their **Token IDs** (e.g. `12840` vs `13347`) and internal vocabulary addresses are completely different!"
+        )
+
+        subw = result.subword_comparison["encodings"]
+        cl_data = subw.get("cl100k_base", {})
+        o2_data = subw.get("o200k_base", {})
+        delta_pct = result.subword_comparison.get("o200k_vs_cl100k_delta_percent", 0.0)
+
+        # Overview Metrics
+        m_c1, m_c2, m_c3, m_c4 = st.columns(4)
+        m_c1.metric("cl100k_base Tokens", f"{cl_data.get('token_count', 0)} tokens", "GPT-4 / 3.5")
+        m_c2.metric("o200k_base Tokens", f"{o2_data.get('token_count', 0)} tokens", f"{delta_pct:+.1f}% Delta")
+        m_c3.metric("cl100k Ratio", f"{cl_data.get('char_to_token_ratio', 0.0)} chars/tok")
+        m_c4.metric("o200k Ratio", f"{o2_data.get('char_to_token_ratio', 0.0)} chars/tok")
+
+        # 1-Click Interactive Multilingual & Code Proof Test Cases
+        st.markdown("#### ⚡ 1-Click Proof Test Cases (Try Different Scripts to Observe Live Delta)")
+        st.caption("Click any preset below to see how token counts diverge in real time between cl100k_base and o200k_base:")
+        btn_col1, btn_col2, btn_col3, btn_col4, btn_col5 = st.columns(5)
+        if btn_col1.button("🇬🇧 English (Equal)", key="tok_test_en"):
+            st.session_state["input_payload_override"] = "what is chemistry and physics?"
+            st.rerun()
+        if btn_col2.button("🇮🇳 Hindi (-64% Delta)", key="tok_test_hi"):
+            st.session_state["input_payload_override"] = "नमस्ते, आप कैसे हैं? मुझे भौतिक विज्ञान समझाएं"
+            st.rerun()
+        if btn_col3.button("🇪🇸 Spanish (-15% Delta)", key="tok_test_es"):
+            st.session_state["input_payload_override"] = "¿Cómo funciona la fotosíntesis en las plantas y la química celular?"
+            st.rerun()
+        if btn_col4.button("🇨🇳 Chinese (-33% Delta)", key="tok_test_zh"):
+            st.session_state["input_payload_override"] = "什么是化学反应和物理学定律？请详细解释"
+            st.rerun()
+        if btn_col5.button("💻 Python Code", key="tok_test_code"):
+            st.session_state["input_payload_override"] = "def calculate_total(items: list[int]) -> int:\n    return sum(x * 2 for x in items)"
+            st.rerun()
+
+        st.markdown("---")
+
+        # Visual Token Breakdown Chips (OpenAI Tokenizer Style)
+        st.markdown("#### 🎨 Subword Token Breakdown & Fragment Chips (OpenAI Tokenizer Style)")
+        st.caption("Each colored badge represents a distinct BPE subword token. Notice the exact token text and unique Token ID:")
+
+        col_chips_a, col_chips_b = st.columns(2)
+
+        # Inspect real tokens using pipeline tokenizer
+        cl_inspect = pipeline.tokenizer.inspect_tokens(result.raw_prompt, "cl100k_base")
+        o2_inspect = pipeline.tokenizer.inspect_tokens(result.raw_prompt, "o200k_base")
+
+        CHIP_COLORS = ["#E3F2FD", "#FCE4EC", "#E8F5E9", "#FFF3E0", "#F3E5F5", "#E0F2F1", "#EDE7F6"]
+
+        def generate_chips_html(token_list):
+            if not token_list:
+                return "<p><i>Empty text</i></p>"
+            html_parts = ['<div style="display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; max-height: 240px; overflow-y: auto;">']
+            for i, t in enumerate(token_list):
+                color = CHIP_COLORS[i % len(CHIP_COLORS)]
+                escaped_text = html.escape(t.text).replace(" ", "&middot;")
+                if not escaped_text.strip():
+                    escaped_text = "&nbsp;"
+                html_parts.append(
+                    f'<span style="background-color: {color}; border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 8px; font-family: monospace; font-size: 13px; line-height: 1.6;">'
+                    f'<b>{escaped_text}</b> <span style="color: #64748b; font-size: 10px;">[{t.token_id}]</span></span>'
+                )
+            html_parts.append('</div>')
+            return "".join(html_parts)
+
+        with col_chips_a:
+            st.markdown(f"**cl100k_base Tokens (`{len(cl_inspect)}` tokens)**")
+            st.markdown(generate_chips_html(cl_inspect), unsafe_allow_html=True)
+            st.caption(f"Token IDs: `{', '.join(str(t.token_id) for t in cl_inspect[:12])}{'...' if len(cl_inspect) > 12 else ''}`")
+
+        with col_chips_b:
+            st.markdown(f"**o200k_base Tokens (`{len(o2_inspect)}` tokens)**")
+            st.markdown(generate_chips_html(o2_inspect), unsafe_allow_html=True)
+            st.caption(f"Token IDs: `{', '.join(str(t.token_id) for t in o2_inspect[:12])}{'...' if len(o2_inspect) > 12 else ''}`")
+
+        # Detailed Side-by-Side Token Inspection Table
+        with st.expander("🔍 Inspect Exact Token IDs & Byte Boundaries (cl100k vs o200k Table)", expanded=False):
+            max_len = max(len(cl_inspect), len(o2_inspect))
+            table_rows = []
+            for i in range(max_len):
+                cl_t = cl_inspect[i] if i < len(cl_inspect) else None
+                o2_t = o2_inspect[i] if i < len(o2_inspect) else None
+                table_rows.append({
+                    "Index": i + 1,
+                    "cl100k Subword": repr(cl_t.text) if cl_t else "-",
+                    "cl100k Token ID": cl_t.token_id if cl_t else "-",
+                    "cl100k Bytes": cl_t.byte_length if cl_t else "-",
+                    "o200k Subword": repr(o2_t.text) if o2_t else "-",
+                    "o200k Token ID": o2_t.token_id if o2_t else "-",
+                    "o200k Bytes": o2_t.byte_length if o2_t else "-",
+                })
+            st.dataframe(pd.DataFrame(table_rows), use_container_width=True)
+
+        st.markdown("---")
+
+        # Module 2: Multilingual Token Fragmentation
         st.markdown("### Module 2: Multilingual Token Fragmentation")
+        st.caption("Analyzes the subword penalty and Unicode script inflation imposed by BPE tokenizers.")
+
         frag = result.multilingual_fragmentation
         f1, f2, f3, f4 = st.columns(4)
-        f1.metric("Primary Script", frag["detected_primary_script"])
-        f2.metric("Total Words", frag["total_words"])
-        f3.metric("cl100k Ratio", f"{frag['cl100k_fragmentation_ratio']} tok/word")
-        f4.metric("Severity", "HEAVY" if frag["is_heavily_fragmented"] else "OPTIMAL")
+        f1.metric("Primary Script", frag.get("detected_primary_script", "Unknown"))
+        f2.metric("Total Words", frag.get("total_words", 0))
+        f3.metric("cl100k Ratio (F)", f"{frag.get('cl100k_fragmentation_ratio', 0.0)} tok/word")
+        sev_label = "⚠️ HEAVY INFLATION" if frag.get("is_heavily_fragmented", False) else "✅ OPTIMAL"
+        f4.metric("Severity Standard", sev_label)
 
+        st.markdown("#### Script Distribution Breakdown")
+        script_list = frag.get("script_breakdown", [])
+        if script_list:
+            st.dataframe(pd.DataFrame(script_list), use_container_width=True)
+        else:
+            st.info("No alphabetic or script characters detected in current prompt.")
+
+        st.markdown("---")
+
+        # Module 3: Information Density & Perplexity
         st.markdown("### Module 3: Information Density & Perplexity")
+        st.caption("Measures information content, lexical vs grammatical function words, and Shannon entropy gain.")
+
         dens = result.information_density_gain
+        raw_p = dens.get("raw_payload", {})
+        comp_p = dens.get("compressed_payload", {})
+
         d1, d2, d3, d4 = st.columns(4)
-        raw_p = dens["raw_payload"]
-        comp_p = dens["compressed_payload"]
-        d1.metric("Entropy H(X)", f"{comp_p['shannon_entropy_bits']:.2f} bits", f"{comp_p['shannon_entropy_bits'] - raw_p['shannon_entropy_bits']:.2f}")
-        d2.metric("Token Perplexity", f"{comp_p['token_perplexity']:.1f}")
-        d3.metric("Lexical Density", f"{comp_p['lexical_density_pct']:.1f}%", dens["lexical_density_increase_pct"])
-        d4.metric("Density Index (IDI)", f"{comp_p['information_density_index']:.2f}", dens["information_density_index_gain_pct"])
+        ent_raw = raw_p.get("shannon_entropy_bits", 0.0)
+        ent_comp = comp_p.get("shannon_entropy_bits", 0.0)
+        d1.metric("Shannon Entropy H(X)", f"{ent_comp:.2f} bits", f"{ent_comp - ent_raw:+.2f} bits")
+        d2.metric("Token Perplexity 2^H(X)", f"{comp_p.get('token_perplexity', 0.0):.2f}")
+        d3.metric("Lexical Density", f"{comp_p.get('lexical_density_pct', 0.0):.1f}%", dens.get("lexical_density_increase_pct", ""))
+        d4.metric("Density Index (IDI)", f"{comp_p.get('information_density_index', 0.0):.2f}", dens.get("information_density_index_gain_pct", ""))
+
+        # Side-by-Side Information Density Comparison Table
+        st.markdown("#### Side-by-Side Mathematical Density Comparison: Raw vs Compressed")
+        density_df = pd.DataFrame([
+            {
+                "Information Metric": "Shannon Entropy H(X) (bits/token)",
+                "Mathematical Formula": "H(X) = - Σ p(x) log2(p(x))",
+                "Raw Prompt Payload": f"{ent_raw:.3f} bits",
+                "Compressed Payload": f"{ent_comp:.3f} bits",
+                "Optimization Impact": f"{ent_comp - ent_raw:+.3f} bits (Higher density)"
+            },
+            {
+                "Information Metric": "Token Perplexity (2^H(X))",
+                "Mathematical Formula": "Perplexity = 2^H(X)",
+                "Raw Prompt Payload": f"{raw_p.get('token_perplexity', 0.0):.2f}",
+                "Compressed Payload": f"{comp_p.get('token_perplexity', 0.0):.2f}",
+                "Optimization Impact": "Empirical branch diversity"
+            },
+            {
+                "Information Metric": "Lexical Density (%)",
+                "Mathematical Formula": "(Content Words / Total Words) × 100",
+                "Raw Prompt Payload": f"{raw_p.get('lexical_density_pct', 0.0):.1f}%",
+                "Compressed Payload": f"{comp_p.get('lexical_density_pct', 0.0):.1f}%",
+                "Optimization Impact": str(dens.get("lexical_density_increase_pct", "+0.0%"))
+            },
+            {
+                "Information Metric": "Content vs Function Words",
+                "Mathematical Formula": "Nouns/Verbs/Code vs Grammatical Fluff",
+                "Raw Prompt Payload": f"{raw_p.get('content_word_count', 0)} content / {raw_p.get('function_word_count', 0)} function",
+                "Compressed Payload": f"{comp_p.get('content_word_count', 0)} content / {comp_p.get('function_word_count', 0)} function",
+                "Optimization Impact": "Pruned conversational stopwords"
+            },
+            {
+                "Information Metric": "Information Density Index (IDI)",
+                "Mathematical Formula": "(Entropy × Lexical Density) / Token Count",
+                "Raw Prompt Payload": f"{raw_p.get('information_density_index', 0.0):.3f}",
+                "Compressed Payload": f"{comp_p.get('information_density_index', 0.0):.3f}",
+                "Optimization Impact": str(dens.get("information_density_index_gain_pct", "+0.0%"))
+            }
+        ])
+        st.dataframe(density_df, use_container_width=True)
 
     with tab_compression:
         st.markdown("### ✂️ Module 4 & 5: Algorithmic Token Compression & AST Code Optimizer")
