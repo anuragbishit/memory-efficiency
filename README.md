@@ -21,6 +21,8 @@
 
 ---
 
+
+
 ## 📌 Executive Summary
 
 Commercial Large Language Model APIs (e.g., OpenAI GPT-4o, Anthropic Claude 3.5 Sonnet) monetize via linear per-token billing. Because providers earn more revenue when prompts are verbose, they lack financial incentive to compress user payloads. Furthermore, standard Byte-Pair Encoding (BPE) vocabularies severely fragment non-Latin scripts (e.g., Hindi suffers a **5.6× token inflation** vs English for identical semantic content).
@@ -342,4 +344,4 @@ This project was developed as part of the B.Tech Minor Project requirements at *
   institution={Shivalik College of Engineering, Dehradun},
   note={Under the supervision of Ms. Swati Kashyap}
 }
-```
+`
